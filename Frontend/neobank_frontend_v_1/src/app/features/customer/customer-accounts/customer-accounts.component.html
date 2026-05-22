@@ -1,0 +1,27 @@
+<!-- <section class="section accounts-section">
+  <div class="section-header">
+    <h2>My Accounts</h2>
+    <p>Manage your bank accounts</p>
+  </div>
+
+  <div class="accounts-grid">
+    <ng-container *ngFor="let acc of accounts">
+      <div class="account-card detailed">
+        <div class="account-header">
+          <span class="account-type">{{ acc.accountType }}</span>
+          <span class="account-status" [class.active]="acc.status === 'ACTIVE'">{{ acc.status }}</span>
+        </div>
+        <div class="account-number">{{ acc.accountNumber }}</div>
+        <div class="account-ifsc">IFSC: {{ acc.ifscCode }}</div>
+        <div class="account-branch">Branch: {{ acc.branchName || 'Main Branch' }}</div>
+        <div class="account-balance">
+          <span>Available Balance</span>
+          <span class="balance-amount">{{ acc.balance | number:'1.2-2' }} {{ acc.currency }}</span>
+        </div>
+        <div class="account-actions">
+          <button class="btn btn-sm btn-outline" (click)="copyToClipboard(acc.accountNumber)">Copy Account #</button>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+</section> -->

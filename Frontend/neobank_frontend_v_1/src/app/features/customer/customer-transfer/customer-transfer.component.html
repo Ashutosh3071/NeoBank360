@@ -1,0 +1,40 @@
+<!-- <section class="section transfer-section">
+  <div class="section-header">
+    <h2>Transfer Money</h2>
+    <p>Send money to other accounts</p>
+  </div>
+
+  <div class="transfer-form">
+    <form (ngSubmit)="onTransfer()" class="form-card">
+      <div class="form-group">
+        <label>From Account</label>
+        <select [(ngModel)]="transferFrom" name="from" class="form-control">
+          <option *ngFor="let acc of accounts" [value]="acc.id">{{ acc.accountNumber }} - {{ acc.balance | number:'1.2-2' }} {{ acc.currency }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>To Account Number</label>
+        <input type="text" [(ngModel)]="transferTo" name="to" class="form-control" placeholder="Enter recipient account number">
+      </div>
+
+      <div class="form-group">
+        <label>Amount (INR)</label>
+        <input type="number" [(ngModel)]="transferAmount" name="amount" class="form-control" placeholder="Enter amount" min="1">
+      </div>
+
+      <div class="form-group">
+        <label>Description (Optional)</label>
+        <input type="text" [(ngModel)]="transferDesc" name="desc" class="form-control" placeholder="What's this for?">
+      </div>
+
+      <div *ngIf="transferError" class="alert alert-error">{{ transferError }}</div>
+      <div *ngIf="transferSuccess" class="alert alert-success"><strong>Transfer Successful!</strong><p>Reference: {{ transferSuccess }}</p></div>
+
+      <button type="submit" class="btn btn-primary" [disabled]="transferLoading">
+        <span *ngIf="transferLoading" class="spinner-sm"></span>
+        Transfer Money
+      </button>
+    </form>
+  </div>
+</section> -->

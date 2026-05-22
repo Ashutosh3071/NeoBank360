@@ -1,0 +1,79 @@
+<!------- customer-open-account.component.html ------->
+
+<div class="section-head">
+  <h1>Open Another Account</h1>
+  <p>Request an additional bank account — quick and easy</p>
+</div>
+
+@if (error())   { <div class="oa-alert oa-err">{{ error() }}<button (click)="error.set('')">✕</button></div> }
+@if (success()) { <div class="oa-alert oa-ok">{{ success() }}<button (click)="success.set('')">✕</button></div> }
+
+<!-- Request Form -->
+<div class="oa-form-card">
+  <h3>New Account Request</h3>
+  <p class="oa-sub">Select the type of account you'd like to open</p>
+
+  <!-- Account Type Selection -->
+  <div class="type-grid">
+    @for (t of accountTypes; track t.value) {
+      <div class="type-card" [class.type-selected]="accountType === t.value"
+        (click)="accountType = t.value">
+        <div class="tc-icon">
+          {{ t.value === 'SAVINGS' ? '💰' : t.value === 'CURRENT' ? '💼' : '💳' }}
+        </div>
+        <div class="tc-label">{{ t.label }}</div>
+        <div class="tc-desc">{{ t.desc }}</div>
+        @if (accountType === t.value) {
+          <div class="tc-check">✓</div>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="form-group">
+    <label>Reason / Purpose (Optional)</label>
+    <textarea class="oa-textarea" [(ngModel)]="reason" rows="3"
+      placeholder="Briefly describe why you need another account..."></textarea>
+  </div>
+
+  <button class="oa-submit-btn" (click)="submit()" [disabled]="loading()">
+    @if (loading()) { <span class="spinner"></span> Submitting... }
+    @else { Submit Request }
+  </button>
+</div>
+
+<!-- My Past Requests -->
+<div class="my-requests-section">
+  <h3>My Account Requests</h3>
+
+  @if (requestsLoading()) {
+    <div class="req-loading"><div class="spin-ring"></div></div>
+  } @else if (myRequests().length === 0) {
+    <div class="no-requests">
+      <p>No account requests yet. Submit one above.</p>
+    </div>
+  } @else {
+    <div class="req-list">
+      @for (req of myRequests(); track req.id) {
+        <div class="req-item">
+          <div class="ri-left">
+            <div class="ri-type">{{ req.accountType }}</div>
+            <div class="ri-id">{{ req.requestId }}</div>
+            <div class="ri-date">{{ req.createdAt }}</div>
+          </div>
+          <div class="ri-right">
+            <span class="st-badge" [class]="getStatusClass(req.status)">
+              {{ getStatusIcon(req.status) }} {{ req.status }}
+            </span>
+            @if (req.status === 'APPROVED' && req.createdAccountNumber) {
+              <div class="ri-acc">Account: {{ req.createdAccountNumber }}</div>
+            }
+            @if (req.status === 'REJECTED' && req.rejectionReason) {
+              <div class="ri-reject">{{ req.rejectionReason }}</div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

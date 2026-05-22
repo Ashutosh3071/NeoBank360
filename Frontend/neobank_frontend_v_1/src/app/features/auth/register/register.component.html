@@ -1,0 +1,552 @@
+﻿<!----- register-new.component.html ----->
+<div class="auth-page">
+
+  <!-- ══ LEFT ══ -->
+  <div class="auth-container">
+    <div class="auth-card">
+
+      <!-- Logo -->
+      <a routerLink="/" class="logo">
+        <span class="logo-icon">N</span>
+        <span class="logo-text">NeoBank</span>
+      </a>
+
+      <!-- ╔══════════════════════════════════════╗
+           ║         REGISTER VIEW                ║
+           ╚══════════════════════════════════════╝ -->
+      @if (activeView() === 'register') {
+
+        <!-- ── STEP: FORM ── -->
+        @if (regStep() === 'form') {
+          <div class="auth-header">
+            <h1>Register User</h1>
+            <p>Join NeoBank — takes less than 2 minutes</p>
+          </div>
+
+          @if (error()) { <div class="alert alert-error">{{ error() }}</div> }
+
+          <form (ngSubmit)="sendOtp()" class="auth-form">
+
+            <!-- Email -->
+            <div class="form-group">
+              <label for="email">Email Address <span class="req">*</span></label>
+              <input type="email" id="email" class="form-control"
+                [class.is-error]="regErrors.email"
+                [(ngModel)]="email" name="email"
+                placeholder="yourname@email.com" autocomplete="email" />
+              @if (regErrors.email) { <span class="err-msg">{{ regErrors.email }}</span> }
+            </div>
+
+            <!-- Username -->
+            <div class="form-group">
+              <label for="username">Username <span class="req">*</span></label>
+              <div class="input-icon-wrap">
+                <input type="text" id="username" class="form-control"
+                  [class.is-error]="regErrors.username || usernameStatus() === 'taken'"
+                  [class.is-success]="usernameStatus() === 'available'"
+                  [(ngModel)]="username" name="username"
+                  placeholder="min. 4 characters" autocomplete="username"
+                  (input)="onUsernameInput()" />
+                <span class="field-icon">
+                  @switch (usernameStatus()) {
+                    @case ('checking')  { <span class="u-spin"></span> }
+                    @case ('available') { <span class="u-ok">✓</span> }
+                    @case ('taken')     { <span class="u-bad">✗</span> }
+                    @case ('invalid')   { <span class="u-bad">✗</span> }
+                  }
+                </span>
+              </div>
+              @if (regErrors.username) {
+                <span class="err-msg">{{ regErrors.username }}</span>
+              } @else if (usernameMessage() && usernameStatus() !== 'idle' && usernameStatus() !== 'checking') {
+                <span class="hint" [class.hint-ok]="usernameStatus() === 'available'" [class.hint-bad]="usernameStatus() !== 'available'">
+                  {{ usernameMessage() }}
+                </span>
+              }
+            </div>
+
+            <!-- Password -->
+            <div class="form-group">
+              <label for="password">Password <span class="req">*</span></label>
+              <div class="pw-wrap">
+                <input [type]="showPassword() ? 'text' : 'password'" id="password"
+                  class="form-control" [class.is-error]="regErrors.password"
+                  [(ngModel)]="password" name="password"
+                  placeholder="Minimum 6 characters" autocomplete="new-password" />
+                <button type="button" class="pw-toggle" (click)="togglePassword()">
+                  {{ showPassword() ? 'Hide' : 'Show' }}
+                </button>
+              </div>
+              @if (regErrors.password) { <span class="err-msg">{{ regErrors.password }}</span> }
+              @if (password.length > 0) {
+                <div class="str-wrap">
+                  <div class="str-bar">
+                    <div class="str-fill" [class]="getPasswordStrength(password).cls"
+                      [style.width.%]="getPasswordStrength(password).width"></div>
+                  </div>
+                  <span class="str-lbl" [class]="getPasswordStrength(password).cls">
+                    {{ getPasswordStrength(password).label }}
+                  </span>
+                </div>
+              }
+            </div>
+
+            <!-- Confirm Password -->
+            <div class="form-group">
+              <label for="confirmPassword">Confirm Password <span class="req">*</span></label>
+              <div class="pw-wrap">
+                <input [type]="showConfirm() ? 'text' : 'password'" id="confirmPassword"
+                  class="form-control"
+                  [class.is-error]="regErrors.confirmPassword"
+                  [class.is-success]="confirmPassword && password === confirmPassword"
+                  [(ngModel)]="confirmPassword" name="confirmPassword"
+                  placeholder="Re-enter password" autocomplete="new-password" />
+                <button type="button" class="pw-toggle" (click)="toggleConfirmPassword()">
+                  {{ showConfirm() ? 'Hide' : 'Show' }}
+                </button>
+              </div>
+              @if (regErrors.confirmPassword) {
+                <span class="err-msg">{{ regErrors.confirmPassword }}</span>
+              } @else if (confirmPassword && password === confirmPassword) {
+                <span class="hint hint-ok">✓ Passwords match</span>
+              }
+            </div>
+
+            <!-- Captcha -->
+            <div class="form-group">
+              <label>Captcha <span class="req">*</span></label>
+              <div class="captcha-box">
+                <span class="captcha-text">{{ captchaText() }}</span>
+                <button type="button" class="captcha-btn" (click)="refreshCaptcha('register')" title="Refresh">↺</button>
+              </div>
+              <input type="text" class="form-control" [class.is-error]="regErrors.captcha"
+                [(ngModel)]="captchaAnswer" name="captchaAnswer"
+                placeholder="Enter captcha above" autocomplete="off" />
+              @if (regErrors.captcha) { <span class="err-msg">{{ regErrors.captcha }}</span> }
+            </div>
+
+            <button type="submit" class="btn btn-primary w-full" [disabled]="loading()">
+              @if (loading()) { <span class="spinner"></span> Sending OTP... }
+              @else { Send OTP → }
+            </button>
+          </form>
+
+          <!-- Links -->
+          <div class="link-row">
+            <button class="link-btn" (click)="showForgotUsername()">Forgot Username?</button>
+            <span class="dot">·</span>
+            <button class="link-btn" (click)="showForgotPassword()">Forgot Password?</button>
+          </div>
+
+          <div class="auth-footer">
+            <p>Already have an account? <a routerLink="/login">Sign in</a></p>
+          </div>
+          <div class="auth-footer">
+            <p>Open New Account <a routerLink="/register-openaccount">Open Account</a></p>
+          </div>
+        }
+
+        <!-- ── STEP: OTP ── -->
+        @if (regStep() === 'otp') {
+          <div class="auth-header">
+            <h1>Verify Email</h1>
+            <p>OTP sent to <strong>{{ email }}</strong></p>
+          </div>
+
+          @if (error()) { <div class="alert alert-error">{{ error() }}</div> }
+          @if (successMsg()) { <div class="alert alert-success">{{ successMsg() }}</div> }
+
+          <div class="otp-icon-big">🔐</div>
+
+          <form (ngSubmit)="verifyAndRegister()" class="auth-form">
+            <div class="form-group">
+              <label>Enter OTP <span class="req">*</span></label>
+              <input type="text" class="form-control otp-field"
+                [class.is-error]="regErrors.otp"
+                [(ngModel)]="otp" name="otp"
+                placeholder="• • • • • •" maxlength="6" inputmode="numeric"
+                autocomplete="one-time-code" />
+              @if (regErrors.otp) { <span class="err-msg">{{ regErrors.otp }}</span> }
+            </div>
+
+            <button type="submit" class="btn btn-primary w-full" [disabled]="loading()">
+              @if (loading()) { <span class="spinner"></span> Creating Account... }
+              @else { Verify & Create Account }
+            </button>
+          </form>
+
+          <div class="otp-actions">
+            <button class="link-btn" (click)="goBackToForm()">← Edit Details</button>
+            <span class="dot">·</span>
+            @if (resendCooldown() > 0) {
+              <span class="cooldown-txt">Resend in {{ resendCooldown() }}s</span>
+            } @else {
+              <button class="link-btn" (click)="resendRegOtp()" [disabled]="loading()">Resend OTP</button>
+            }
+          </div>
+
+          <div class="auth-footer">
+            <p>Already have an account? <a routerLink="/login">Sign in</a></p>
+          </div>
+        }
+
+        <!-- ── STEP: SUCCESS ── -->
+        @if (regStep() === 'success') {
+          <div class="success-card">
+            <div class="success-circle">
+              <span>✓</span>
+            </div>
+            <h2>Account Created!</h2>
+            <p class="success-sub">
+              Welcome to NeoBank! You can now login<br>with your username and password.
+            </p>
+            <div class="info-card">
+              <div class="info-row"><span>Email</span><strong>{{ email }}</strong></div>
+              <div class="info-row"><span>Username</span><strong>{{ username }}</strong></div>
+              <div class="info-row">
+                <span>Status</span>
+                <span class="badge badge-green">✓ ACTIVE</span>
+              </div>
+            </div>
+            <div class="notice-box">
+              📋 To open a bank account, complete the
+              <a routerLink="/register-multi">Account Application</a>.
+            </div>
+            <button class="btn btn-primary w-full" (click)="goToLogin()">Go to Login →</button>
+          </div>
+        }
+      }
+
+      <!-- ╔══════════════════════════════════════╗
+           ║       FORGOT USERNAME VIEW           ║
+           ╚══════════════════════════════════════╝ -->
+      @if (activeView() === 'forgotUsername') {
+
+        <!-- STEP: input -->
+        @if (forgotUStep() === 'input') {
+          <div class="auth-header">
+            <button class="back-btn" (click)="backToRegister()">← Back</button>
+            <h1>Forgot Username</h1>
+            <p>Enter your registered email to recover your username via OTP</p>
+          </div>
+
+          @if (fuError()) { <div class="alert alert-error">{{ fuError() }}</div> }
+
+          <form (ngSubmit)="sendForgotUOtp()" class="auth-form">
+            <div class="form-group">
+              <label>Email Address <span class="req">*</span></label>
+              <input type="email" class="form-control" [class.is-error]="fuErrors.email"
+                [(ngModel)]="fuEmail" name="fuEmail"
+                placeholder="yourname@email.com" />
+              @if (fuErrors.email) { <span class="err-msg">{{ fuErrors.email }}</span> }
+            </div>
+
+            <div class="form-group">
+              <label>Captcha <span class="req">*</span></label>
+              <div class="captcha-box">
+                <span class="captcha-text">{{ fuCaptchaText() }}</span>
+                <button type="button" class="captcha-btn" (click)="refreshCaptcha('forgotU')">↺</button>
+              </div>
+              <input type="text" class="form-control" [class.is-error]="fuErrors.captcha"
+                [(ngModel)]="fuCaptchaAnswer" name="fuCaptchaAnswer"
+                placeholder="Enter captcha above" autocomplete="off" />
+              @if (fuErrors.captcha) { <span class="err-msg">{{ fuErrors.captcha }}</span> }
+            </div>
+
+            <button type="submit" class="btn btn-primary w-full" [disabled]="fuLoading()">
+              @if (fuLoading()) { <span class="spinner"></span> Sending OTP... }
+              @else { Send OTP → }
+            </button>
+          </form>
+        }
+
+        <!-- STEP: otp -->
+        @if (forgotUStep() === 'otp') {
+          <div class="auth-header">
+            <h1>Enter OTP</h1>
+            <p>OTP sent to <strong>{{ fuEmail }}</strong></p>
+          </div>
+
+          @if (fuError()) { <div class="alert alert-error">{{ fuError() }}</div> }
+          @if (fuSuccess()) { <div class="alert alert-success">{{ fuSuccess() }}</div> }
+
+          <div class="otp-icon-big">🔐</div>
+
+          <form (ngSubmit)="verifyForgotUOtp()" class="auth-form">
+            <div class="form-group">
+              <label>Enter OTP <span class="req">*</span></label>
+              <input type="text" class="form-control otp-field"
+                [class.is-error]="fuErrors.otp"
+                [(ngModel)]="fuOtp" name="fuOtp"
+                placeholder="• • • • • •" maxlength="6" inputmode="numeric" />
+              @if (fuErrors.otp) { <span class="err-msg">{{ fuErrors.otp }}</span> }
+            </div>
+
+            <button type="submit" class="btn btn-primary w-full" [disabled]="fuLoading()">
+              @if (fuLoading()) { <span class="spinner"></span> Verifying... }
+              @else { Verify OTP }
+            </button>
+          </form>
+
+          <div class="otp-actions">
+            <button class="link-btn" (click)="forgotUStep.set('input')">← Back</button>
+            <span class="dot">·</span>
+            @if (fuResendCooldown() > 0) {
+              <span class="cooldown-txt">Resend in {{ fuResendCooldown() }}s</span>
+            } @else {
+              <button class="link-btn" (click)="resendFuOtp()" [disabled]="fuLoading()">Resend OTP</button>
+            }
+          </div>
+        }
+
+        <!-- STEP: done -->
+        @if (forgotUStep() === 'done') {
+          <div class="success-card">
+            <div class="success-circle success-circle-blue">
+              <span>✉️</span>
+            </div>
+            <h2>Username Sent!</h2>
+            <p class="success-sub">
+              Your username has been sent to<br>
+              <strong>{{ fuEmail }}</strong>
+            </p>
+            <div class="notice-box">
+              📬 Please check your email inbox (and spam/junk folder).
+            </div>
+            <button class="btn btn-primary w-full" (click)="backToRegister()">← Back to Register</button>
+            <button class="btn btn-outline w-full" (click)="goToLogin()">Go to Login</button>
+          </div>
+        }
+      }
+
+      <!-- ╔══════════════════════════════════════╗
+           ║       FORGOT PASSWORD VIEW           ║
+           ╚══════════════════════════════════════╝ -->
+      @if (activeView() === 'forgotPassword') {
+
+        <!-- STEP: input -->
+        @if (forgotPStep() === 'input') {
+          <div class="auth-header">
+            <button class="back-btn" (click)="backToRegister()">← Back</button>
+            <h1>Forgot Password</h1>
+            <p>Enter your registered email to receive an OTP</p>
+          </div>
+
+          @if (fpError()) { <div class="alert alert-error">{{ fpError() }}</div> }
+
+          <form (ngSubmit)="sendForgotPOtp()" class="auth-form">
+            <div class="form-group">
+              <label>Email Address <span class="req">*</span></label>
+              <input type="email" class="form-control" [class.is-error]="fpErrors.email"
+                [(ngModel)]="fpEmail" name="fpEmail"
+                placeholder="yourname@email.com" />
+              @if (fpErrors.email) { <span class="err-msg">{{ fpErrors.email }}</span> }
+            </div>
+
+            <div class="form-group">
+              <label>Captcha <span class="req">*</span></label>
+              <div class="captcha-box">
+                <span class="captcha-text">{{ fpCaptchaText() }}</span>
+                <button type="button" class="captcha-btn" (click)="refreshCaptcha('forgotP')">↺</button>
+              </div>
+              <input type="text" class="form-control" [class.is-error]="fpErrors.captcha"
+                [(ngModel)]="fpCaptchaAnswer" name="fpCaptchaAnswer"
+                placeholder="Enter captcha above" autocomplete="off" />
+              @if (fpErrors.captcha) { <span class="err-msg">{{ fpErrors.captcha }}</span> }
+            </div>
+
+            <button type="submit" class="btn btn-primary w-full" [disabled]="fpLoading()">
+              @if (fpLoading()) { <span class="spinner"></span> Sending OTP... }
+              @else { Send OTP → }
+            </button>
+          </form>
+        }
+
+        <!-- STEP: otp -->
+        @if (forgotPStep() === 'otp') {
+          <div class="auth-header">
+            <h1>Enter OTP</h1>
+            <p>OTP sent to <strong>{{ fpEmail }}</strong></p>
+          </div>
+
+          @if (fpError()) { <div class="alert alert-error">{{ fpError() }}</div> }
+          @if (fpSuccess()) { <div class="alert alert-success">{{ fpSuccess() }}</div> }
+
+          <div class="otp-icon-big">🔐</div>
+
+          <form (ngSubmit)="verifyForgotPOtp()" class="auth-form">
+            <div class="form-group">
+              <label>Enter OTP <span class="req">*</span></label>
+              <input type="text" class="form-control otp-field"
+                [class.is-error]="fpErrors.otp"
+                [(ngModel)]="fpOtp" name="fpOtp"
+                placeholder="• • • • • •" maxlength="6" inputmode="numeric" />
+              @if (fpErrors.otp) { <span class="err-msg">{{ fpErrors.otp }}</span> }
+            </div>
+
+            <button type="submit" class="btn btn-primary w-full" [disabled]="fpLoading()">
+              @if (fpLoading()) { <span class="spinner"></span> Verifying... }
+              @else { Verify OTP → }
+            </button>
+          </form>
+
+          <div class="otp-actions">
+            <button class="link-btn" (click)="forgotPStep.set('input')">← Back</button>
+            <span class="dot">·</span>
+            @if (fpResendCooldown() > 0) {
+              <span class="cooldown-txt">Resend in {{ fpResendCooldown() }}s</span>
+            } @else {
+              <button class="link-btn" (click)="resendFpOtp()" [disabled]="fpLoading()">Resend OTP</button>
+            }
+          </div>
+        }
+
+        <!-- STEP: reset -->
+        @if (forgotPStep() === 'reset') {
+          <div class="auth-header">
+            <h1>Set New Password</h1>
+            <p>Create a strong new password for your account</p>
+          </div>
+
+          @if (fpError()) { <div class="alert alert-error">{{ fpError() }}</div> }
+
+          <form (ngSubmit)="submitResetPassword()" class="auth-form">
+            <div class="form-group">
+              <label>New Password <span class="req">*</span></label>
+              <div class="pw-wrap">
+                <input [type]="showFpPassword() ? 'text' : 'password'"
+                  class="form-control" [class.is-error]="fpErrors.newPassword"
+                  [(ngModel)]="fpNewPassword" name="fpNewPassword"
+                  placeholder="Minimum 6 characters" autocomplete="new-password" />
+                <button type="button" class="pw-toggle" (click)="toggleFpPassword()">
+                  {{ showFpPassword() ? 'Hide' : 'Show' }}
+                </button>
+              </div>
+              @if (fpErrors.newPassword) { <span class="err-msg">{{ fpErrors.newPassword }}</span> }
+              @if (fpNewPassword.length > 0) {
+                <div class="str-wrap">
+                  <div class="str-bar">
+                    <div class="str-fill" [class]="getPasswordStrength(fpNewPassword).cls"
+                      [style.width.%]="getPasswordStrength(fpNewPassword).width"></div>
+                  </div>
+                  <span class="str-lbl" [class]="getPasswordStrength(fpNewPassword).cls">
+                    {{ getPasswordStrength(fpNewPassword).label }}
+                  </span>
+                </div>
+              }
+            </div>
+
+            <div class="form-group">
+              <label>Confirm New Password <span class="req">*</span></label>
+              <div class="pw-wrap">
+                <input [type]="showFpConfirm() ? 'text' : 'password'"
+                  class="form-control"
+                  [class.is-error]="fpErrors.confirmPassword"
+                  [class.is-success]="fpConfirmPassword && fpNewPassword === fpConfirmPassword"
+                  [(ngModel)]="fpConfirmPassword" name="fpConfirmPassword"
+                  placeholder="Re-enter new password" autocomplete="new-password" />
+                <button type="button" class="pw-toggle" (click)="toggleFpConfirm()">
+                  {{ showFpConfirm() ? 'Hide' : 'Show' }}
+                </button>
+              </div>
+              @if (fpErrors.confirmPassword) {
+                <span class="err-msg">{{ fpErrors.confirmPassword }}</span>
+              } @else if (fpConfirmPassword && fpNewPassword === fpConfirmPassword) {
+                <span class="hint hint-ok">✓ Passwords match</span>
+              }
+            </div>
+
+            <button type="submit" class="btn btn-primary w-full" [disabled]="fpLoading()">
+              @if (fpLoading()) { <span class="spinner"></span> Resetting... }
+              @else { Reset Password }
+            </button>
+          </form>
+        }
+
+        <!-- STEP: done -->
+        @if (forgotPStep() === 'done') {
+          <div class="success-card">
+            <div class="success-circle">
+              <span>✓</span>
+            </div>
+            <h2>Password Reset!</h2>
+            <p class="success-sub">
+              Your password has been reset successfully.<br>
+              You can now login with your new password.
+            </p>
+            <div class="notice-box">
+              🔒 For security, please do not share your password with anyone.
+            </div>
+            <button class="btn btn-primary w-full" (click)="goToLogin()">Go to Login →</button>
+            <button class="btn btn-outline w-full" (click)="backToRegister()">← Back to Register</button>
+          </div>
+        }
+      }
+
+    </div>
+  </div>
+
+  <!-- ══ RIGHT: VISUAL ══ -->
+  <div class="auth-visual">
+    <div class="visual-content">
+
+      @if (activeView() === 'register') {
+        @if (regStep() === 'form') {
+          <div class="visual-emoji">🏦</div>
+          <h2>Join NeoBank Today</h2>
+          <p>Experience the future of digital banking</p>
+          <div class="v-features">
+            <div class="v-feature"><span>🔒</span><span>Bank-Grade Security</span></div>
+            <div class="v-feature"><span>⚡</span><span>Instant Transfers</span></div>
+            <div class="v-feature"><span>📊</span><span>Smart Analytics</span></div>
+            <div class="v-feature"><span>💳</span><span>Multi-Account Support</span></div>
+          </div>
+        }
+        @if (regStep() === 'otp') {
+          <div class="visual-emoji">📧</div>
+          <h2>Check Your Email</h2>
+          <p>We've sent a verification code to your inbox</p>
+          <div class="v-features">
+            <div class="v-feature"><span>✉️</span><span>Check spam/junk folder too</span></div>
+            <div class="v-feature"><span>⏱️</span><span>OTP valid for 10 minutes</span></div>
+            <div class="v-feature"><span>🔁</span><span>Resend after 60 seconds</span></div>
+          </div>
+        }
+        @if (regStep() === 'success') {
+          <div class="visual-check-circle">✓</div>
+          <h2>Welcome to NeoBank!</h2>
+          <p>Your account is ready to use</p>
+          <div class="v-features">
+            <div class="v-feature"><span>🎉</span><span>Account created successfully</span></div>
+            <div class="v-feature"><span>📋</span><span>Apply for bank account next</span></div>
+            <div class="v-feature"><span>💳</span><span>Activation in 2–3 days</span></div>
+          </div>
+        }
+      }
+
+      @if (activeView() === 'forgotUsername') {
+        <div class="visual-emoji">👤</div>
+        <h2>Forgot Your Username?</h2>
+        <p>No worries — we'll send your username to your registered email</p>
+        <div class="v-features">
+          <div class="v-feature"><span>📧</span><span>Enter your registered email</span></div>
+          <div class="v-feature"><span>🔐</span><span>Verify with OTP</span></div>
+          <div class="v-feature"><span>✉️</span><span>Username sent to email</span></div>
+        </div>
+      }
+
+      @if (activeView() === 'forgotPassword') {
+        <div class="visual-emoji">🔑</div>
+        <h2>Reset Your Password</h2>
+        <p>Securely reset your password in 3 simple steps</p>
+        <div class="v-features">
+          <div class="v-feature"><span>📧</span><span>Enter your registered email</span></div>
+          <div class="v-feature"><span>🔐</span><span>Verify with OTP</span></div>
+          <div class="v-feature"><span>🔒</span><span>Set your new password</span></div>
+        </div>
+      }
+
+    </div>
+  </div>
+
+</div>

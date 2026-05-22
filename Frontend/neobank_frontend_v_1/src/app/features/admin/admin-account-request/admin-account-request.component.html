@@ -1,0 +1,242 @@
+<!------- admin-account-request.component.html ------->
+
+@if (error())   { <div class="ar-alert ar-err">{{ error() }}<button (click)="error.set('')">✕</button></div> }
+@if (success()) { <div class="ar-alert ar-ok">{{ success() }}<button (click)="success.set('')">✕</button></div> }
+
+<div class="section-head">
+  <div>
+    <h1>Open Account Requests</h1>
+    <p>{{ totalElements() }} total requests</p>
+  </div>
+  <div class="head-actions">
+    <select class="filter-select" [(ngModel)]="statusFilter" (change)="onFilterChange()">
+      <option value="all">All</option>
+      <option value="pending">Pending</option>
+      <option value="approved">Approved</option>
+      <option value="rejected">Rejected</option>
+    </select>
+    <div class="search-box">
+      <span>🔍</span>
+      <input type="text" [(ngModel)]="searchQuery"
+        placeholder="Search request ID, name, email..."
+        class="search-input" />
+    </div>
+    <button class="refresh-btn" (click)="loadRequests()" [disabled]="loading()">↺</button>
+  </div>
+</div>
+
+<div class="table-wrap">
+  @if (loading() && requests().length === 0) {
+    <div class="t-loading"><div class="spin-ring"></div><p>Loading requests...</p></div>
+  } @else if (filteredRequests.length === 0) {
+    <div class="empty-state">
+      <div>📋</div><h3>No Requests Found</h3><p>No account requests in this category.</p>
+    </div>
+  } @else {
+    <table class="ar-table">
+      <thead>
+        <tr>
+          <th>Request ID</th>
+          <th>Customer</th>
+          <th>Account Type</th>
+          <th>Reason</th>
+          <th>Status</th>
+          <th>Submitted</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (req of filteredRequests; track req.id) {
+          <tr class="t-row">
+            <td class="mono">{{ req.requestId }}</td>
+            <td>
+              <div class="cust-cell">
+                <div class="cust-avatar">{{ (req.fullName || req.username)?.[0]?.toUpperCase() }}</div>
+                <div>
+                  <div class="cust-name">{{ req.fullName || req.username }}</div>
+                  <div class="cust-email">{{ req.email }}</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="type-badge">{{ req.accountType }}</span></td>
+            <td class="reason-cell">{{ req.reason || '—' }}</td>
+            <td><span class="st-badge" [class]="getStatusClass(req.status)">{{ req.status }}</span></td>
+            <td class="date-cell">{{ req.createdAt }}</td>
+            <td>
+              <button class="view-btn" (click)="viewDetail(req)">👁 View</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    @if (totalPages() > 1) {
+      <div class="pagination">
+        <button class="pg-btn" (click)="goToPage(page() - 1)" [disabled]="page() === 0">← Prev</button>
+        @for (p of pageNumbers; track p) {
+          <button class="pg-btn pg-num" [class.pg-active]="p === page()" (click)="goToPage(p)">{{ p + 1 }}</button>
+        }
+        <button class="pg-btn" (click)="goToPage(page() + 1)" [disabled]="page() >= totalPages() - 1">Next →</button>
+      </div>
+    }
+  }
+</div>
+
+<!-- ══ DETAIL MODAL ══ -->
+@if (modalMode() === 'detail' || modalMode() === 'approve' || modalMode() === 'reject') {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <div class="modal-wide" (click)="$event.stopPropagation()">
+      <div class="modal-hdr">
+        <div>
+          <h3>Account Request Detail</h3>
+          @if (selected()) { <span class="modal-id">{{ selected().requestId }}</span> }
+        </div>
+        <button class="modal-close" (click)="closeModal()">✕</button>
+      </div>
+
+      @if (detailLoading()) {
+        <div class="modal-loading"><div class="spin-ring"></div></div>
+      }
+
+      @if (selected() && !detailLoading()) {
+        <div class="modal-body-wide">
+
+          <!-- Status Banner -->
+          <div class="st-banner" [class]="getStatusClass(selected().status)">
+            <strong>{{ selected().status }}</strong>
+            @if (selected().reviewedBy) {
+              <span>Reviewed by {{ selected().reviewedBy }} on {{ selected().reviewedAt }}</span>
+            }
+            @if (selected().rejectionReason) {
+              <span>Reason: {{ selected().rejectionReason }}</span>
+            }
+            @if (selected().createdAccountNumber) {
+              <span>Account Created: {{ selected().createdAccountNumber }}</span>
+            }
+          </div>
+
+          <div class="detail-cols">
+            <!-- LEFT: Request + User -->
+            <div class="detail-col">
+              <div class="detail-section">
+                <h4>Request Info</h4>
+                <div class="dg">
+                  <div class="dg-item"><span>Type</span><strong>{{ selected().accountType }}</strong></div>
+                  <div class="dg-item"><span>Reason</span><strong>{{ selected().reason || '—' }}</strong></div>
+                  <div class="dg-item"><span>Submitted</span><strong>{{ selected().createdAt }}</strong></div>
+                </div>
+              </div>
+
+              <div class="detail-section">
+                <h4>Customer Details</h4>
+                <div class="dg">
+                  <div class="dg-item"><span>Name</span><strong>{{ selected().fullName }}</strong></div>
+                  <div class="dg-item"><span>Email</span><strong>{{ selected().email }}</strong></div>
+                  <div class="dg-item"><span>Phone</span><strong>{{ selected().phone || '—' }}</strong></div>
+                  <div class="dg-item"><span>Username</span><strong>{{ selected().username }}</strong></div>
+                </div>
+              </div>
+
+              @if (selected().latestApplication) {
+                <div class="detail-section">
+                  <h4>Latest Application</h4>
+                  <div class="dg">
+                    <div class="dg-item"><span>App ID</span><strong class="mono">{{ selected().latestApplication.applicationId }}</strong></div>
+                    <div class="dg-item"><span>Status</span><strong>{{ selected().latestApplication.status }}</strong></div>
+                    <div class="dg-item"><span>Type</span><strong>{{ selected().latestApplication.accountType }}</strong></div>
+                    <div class="dg-item"><span>Date</span><strong>{{ selected().latestApplication.submittedOn }}</strong></div>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- RIGHT: Existing Accounts -->
+            <div class="detail-col">
+              <div class="detail-section">
+                <h4>Existing Accounts ({{ selected().existingAccounts?.length || 0 }})</h4>
+                @if (!selected().existingAccounts?.length) {
+                  <p class="no-data">No existing accounts.</p>
+                } @else {
+                  <div class="acc-list">
+                    @for (acc of selected().existingAccounts; track acc.accountNumber) {
+                      <div class="acc-mini">
+                        <div class="am-header">
+                          <span class="am-type">{{ acc.accountType }}</span>
+                          <span class="am-status" [class]="'as-' + acc.status?.toLowerCase()">{{ acc.status }}</span>
+                        </div>
+                        <div class="am-number mono">{{ acc.accountNumber }}</div>
+                        <!-- <div class="am-balance">₹{{ parseFloat(acc.balance).toLocaleString('en-IN', {minimumFractionDigits: 2}) }}</div> -->
+                        <div class="am-branch">{{ acc.branchName }} · {{ acc.ifscCode }}</div>
+                        <div class="am-date">Opened: {{ acc.openedOn }}</div>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer — Detail -->
+        @if (modalMode() === 'detail') {
+          <div class="modal-ftr">
+            <button class="m-btn-outline" (click)="closeModal()">Close</button>
+            @if (selected().status === 'PENDING') {
+              <button class="m-btn-red" (click)="openReject()">❌ Reject</button>
+              <button class="m-btn-green" (click)="openApprove()">✅ Approve</button>
+            }
+          </div>
+        }
+
+        <!-- Footer — Approve -->
+        @if (modalMode() === 'approve') {
+          <div class="modal-ftr approve-ftr">
+            <div class="approve-form">
+              <h4>Create New Account</h4>
+              @if (error()) { <div class="ar-alert ar-err">{{ error() }}</div> }
+              <div class="af-grid">
+                <div class="form-group">
+                  <label>Branch Name</label>
+                  <input type="text" class="m-input" [(ngModel)]="branchName" />
+                </div>
+                <div class="form-group">
+                  <label>Branch Code</label>
+                  <input type="text" class="m-input" [(ngModel)]="branchCode" />
+                </div>
+                <div class="form-group">
+                  <label>IFSC Code</label>
+                  <input type="text" class="m-input" [(ngModel)]="ifscCode" />
+                </div>
+              </div>
+              <div class="af-actions">
+                <button class="m-btn-outline" (click)="backToDetail()" [disabled]="actionLoading()">← Back</button>
+                <button class="m-btn-green" (click)="confirmApprove()" [disabled]="actionLoading()">
+                  @if (actionLoading()) { <span class="spinner"></span> } ✅ Confirm Approval
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Footer — Reject -->
+        @if (modalMode() === 'reject') {
+          <div class="modal-ftr reject-ftr">
+            <div class="reject-form">
+              <h4>Rejection Reason</h4>
+              @if (error()) { <div class="ar-alert ar-err">{{ error() }}</div> }
+              <textarea class="m-textarea" [(ngModel)]="rejectionReason" rows="3"
+                placeholder="Enter reason for rejection..."></textarea>
+              <div class="rf-actions">
+                <button class="m-btn-outline" (click)="backToDetail()" [disabled]="actionLoading()">← Back</button>
+                <button class="m-btn-red" (click)="confirmReject()"
+                  [disabled]="actionLoading() || !rejectionReason.trim()">
+                  @if (actionLoading()) { <span class="spinner"></span> } ❌ Confirm Rejection
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  </div>
+}

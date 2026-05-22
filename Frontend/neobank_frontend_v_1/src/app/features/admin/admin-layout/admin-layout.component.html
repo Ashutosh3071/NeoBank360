@@ -1,0 +1,134 @@
+<!------- admin-layout.component.html ------->
+<div class="admin-shell" [class.dark]="isDarkMode()">
+
+  @if (isMobile() && sidebarOpen()) {
+    <div class="overlay" (click)="closeSidebar()"></div>
+  }
+
+  <!-- ══ SIDEBAR ══ -->
+  <app-admin-sidebar
+    [sidebarOpen]="sidebarOpen()"
+    [sidebarCollapsed]="sidebarCollapsed()"
+    [currentSection]="currentSection()"
+    [username]="adminUser()?.username || ''"
+    [fullName]="adminUser()?.fullName || ''"
+    [role]="adminUser()?.role || ''"
+    [pendingCount]="pendingCount()"
+    (sectionSelected)="onSectionSelected($event)"
+    (closeSidebarEvt)="closeSidebar()"
+    (openSidebarCollapsed)="toggleSidebarOpenCollapsed();"
+    (logoutEvt)="logout()"
+  ></app-admin-sidebar>
+
+  <!-- ══ MAIN ══ -->
+  <div class="main" [class.main-collapsed]="sidebarCollapsed() && !isMobile()">
+
+    <!-- Header -->
+    <app-admin-header
+      [username]="adminUser()?.username || ''"
+      [fullName]="adminUser()?.fullName || ''"
+      [role]="adminUser()?.role || ''"
+      [pageTitle]="getPageTitle()"
+      [isDarkMode]="isDarkMode()"
+      (toggleSidebarEvt)="toggleSidebar()"
+      (cycleThemeEvt)="cycleTheme()"
+      (logoutEvt)="logout()"
+    ></app-admin-header>
+
+    <!-- Alerts -->
+    @if (error()) {
+      <div class="pg-alert err">
+        <span>{{ error() }}</span>
+        <button (click)="error.set('')">✕</button>
+      </div>
+    }
+    @if (success()) {
+      <div class="pg-alert ok">
+        <span>{{ success() }}</span>
+        <button (click)="success.set('')">✕</button>
+      </div>
+    }
+
+    <!-- ══ CONTENT ══ -->
+    <main class="content">
+
+      <!-- ── DASHBOARD ── -->
+      @if (currentSection() === 'dashboard') {
+        <div class="section-head">
+          <h1>Dashboard</h1>
+          <p>Welcome back, {{ adminUser()?.username }}!</p>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-icon">📋</div><div><div class="stat-val">—</div><div class="stat-lbl">Applications</div></div></div>
+          <div class="stat-card"><div class="stat-icon">👥</div><div><div class="stat-val">—</div><div class="stat-lbl">Users</div></div></div>
+          <div class="stat-card"><div class="stat-icon">🏦</div><div><div class="stat-val">—</div><div class="stat-lbl">Accounts</div></div></div>
+          <div class="stat-card"><div class="stat-icon">💸</div><div><div class="stat-val">—</div><div class="stat-lbl">Transactions</div></div></div>
+        </div>
+      }
+
+      <!-- ── APPLICATIONS ── -->
+      @if (isApplicationSection()) {
+        <app-admin-application
+          [activeSubSection]="currentSection()"
+          (pendingCountChange)="pendingCount.set($event)"
+        ></app-admin-application>
+      }
+
+      <!-- ── USERS ── -->
+      @if (isUsersSection()) {
+        <app-admin-user [activeSubSection]="currentSection()"></app-admin-user>
+      }
+
+      <!-- ── ACCOUNTS ── -->
+      @if (isAccountsSection()) {
+        <app-admin-account [activeSubSection]="currentSection()"></app-admin-account>
+      }
+
+      <!-- ── TRANSACTIONS ── -->
+      @if (isTransactionSection()) {
+        <app-admin-transaction></app-admin-transaction>
+      }
+
+      <!-- ── PROFILE ── -->
+      @if (isProfileSection()) {
+        <app-admin-profile
+          [activeSubSection]="currentSection()"
+          [user]="adminUser()"
+        ></app-admin-profile>
+      }
+
+      <!-- ── ACCOUNT REQUESTS ── -->
+      @if (isAccountRequestSection()) {
+        <app-admin-account-request></app-admin-account-request>
+      }
+
+      <!-- ── PLACEHOLDER (unbuilt sections only) ── -->
+      @if (
+        currentSection() !== 'dashboard' &&
+        !isApplicationSection() &&
+        !isUsersSection() &&
+        !isAccountsSection() &&
+        !isTransactionSection() &&
+        !isProfileSection() &&
+        !isAccountRequestSection()
+      ) {
+        <div class="section-head">
+          <h1>{{ getPageTitle() }}</h1>
+          <p>This section is under development</p>
+        </div>
+        <div class="placeholder">
+          <div class="ph-icon">🔧</div>
+          <h3>{{ getPageTitle() }}</h3>
+          <p>Add your component here following the same pattern as Applications.</p>
+        </div>
+      }
+
+    </main>
+
+    <footer class="page-footer">
+      <span>© 2026 NeoBank Admin</span>
+      <span>v1.0.0</span>
+    </footer>
+
+  </div>
+</div>

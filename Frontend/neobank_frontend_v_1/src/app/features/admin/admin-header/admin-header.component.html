@@ -1,0 +1,31 @@
+<!------- admin-header.component.html ------->
+<header class="top-header">
+  <div class="header-left">
+    <button class="hamburger" (click)="toggleSidebarEvt.emit()">☰</button>
+    <div class="breadcrumb">
+      <span class="bc-root">Admin</span>
+      <span class="bc-sep">›</span>
+      <span class="bc-cur">{{ pageTitle }}</span>
+    </div>
+  </div>
+
+  <div class="header-right">
+    <!-- <button class="h-btn" (click)="cycleThemeEvt.emit()" title="Toggle theme">
+      {{ isDarkMode ? '☀️' : '🌙' }}
+    </button> -->
+    <button class="h-btn" (click)="toggleTheme()" title="Toggle theme">
+  {{ themeService.isDark() ? '☀️' : '🌙' }}
+</button>
+    <button class="h-btn notif-btn" title="Notifications">
+      🔔<span class="notif-dot"></span>
+    </button>
+    <div class="h-user">
+      <div class="h-avatar">{{ getUserInitials() }}</div>
+      <div class="h-info">
+        <div class="h-name">{{ fullName || username }}</div>
+        <div class="h-role">{{ role }}</div>
+      </div>
+    </div>
+    <button class="h-btn h-logout" (click)="logoutEvt.emit()" title="Logout">🚪</button>
+  </div>
+</header>

@@ -1,0 +1,59 @@
+<section class="section">
+  <div class="section-header">
+    <h2>Account Overview</h2>
+    <p>Welcome back! Here's your financial summary.</p>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card balance-card">
+      <span class="stat-label">Total Balance</span>
+      <span class="stat-value">
+        {{ (totalBalance ?? 0) | number:'1.2-2' }}
+      </span>
+      <span class="stat-currency">INR</span>
+    </div>
+
+    <div class="stat-card">
+      <span class="stat-label">Accounts</span>
+      <span class="stat-value">{{ accounts.length }}</span>
+    </div>
+
+    <div class="stat-card">
+      <span class="stat-label">Transactions</span>
+      <span class="stat-value">{{ transactions.length }}</span>
+    </div>
+  </div>
+
+  <div class="section-sub" *ngIf="accounts.length > 0">
+    <h3>Your Accounts</h3>
+
+    <div class="accounts-grid">
+      <ng-container *ngFor="let acc of accounts | slice:0:3">
+        <div class="account-card">
+          
+          <div class="account-header">
+            <span class="account-type">{{ acc.accountType }}</span>
+            <span 
+              class="account-status" 
+              [class.active]="acc.status === 'ACTIVE'">
+              {{ acc.status }}
+            </span>
+          </div>
+
+          <div class="account-number">
+            {{ acc.accountNumber }}
+          </div>
+
+          <div class="account-balance">
+            <span>Balance</span>
+            <span class="balance-amount">
+              {{ acc.balance | number:'1.2-2' }} {{ acc.currency }}
+            </span>
+          </div>
+
+        </div>
+      </ng-container>
+    </div>
+  </div>
+
+</section>

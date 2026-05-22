@@ -1,0 +1,86 @@
+<!------- customer-rewards.component.html ------->
+
+<div class="section-head">
+  <h1>🏆 Reward Points</h1>
+  <p>Earn points on transactions and bill payments</p>
+</div>
+
+<!-- Balance Card -->
+@if (balanceLoading()) {
+  <div class="r-loading"><div class="spin-ring"></div></div>
+} @else if (balance()) {
+  <div class="balance-hero">
+    <div class="bh-icon">🏆</div>
+    <div class="bh-points">{{ balance().pointsBalance | number }}</div>
+    <div class="bh-label">Total Reward Points</div>
+    <div class="bh-value">≈ {{ cashValue }} cash value</div>
+    <div class="bh-updated">Updated: {{ balance().lastUpdated }}</div>
+  </div>
+
+  <!-- How to earn -->
+  <div class="earn-ways">
+    <h3>How to Earn Points</h3>
+    <div class="ew-grid">
+      <div class="ew-item">
+        <div class="ew-icon">💸</div>
+        <div class="ew-text">
+          <div class="ew-title">Transactions</div>
+          <div class="ew-desc">1 point per ₹100 transacted</div>
+        </div>
+      </div>
+      <div class="ew-item">
+        <div class="ew-icon">📄</div>
+        <div class="ew-text">
+          <div class="ew-title">Bill Payments</div>
+          <div class="ew-desc">10 points per bill paid</div>
+        </div>
+      </div>
+      <div class="ew-item">
+        <div class="ew-icon">📱</div>
+        <div class="ew-text">
+          <div class="ew-title">UPI Payments</div>
+          <div class="ew-desc">1 point per ₹100 sent</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="hist-section">
+    <h3>Reward History</h3>
+
+    @if (history().length === 0 && !historyLoading()) {
+      <div class="no-history">
+        <div>🏆</div>
+        <p>No reward history yet. Start transacting to earn points!</p>
+      </div>
+    } @else {
+      <div class="hist-list">
+        @for (h of history(); track h.id) {
+          <div class="hist-item">
+            <div class="hi-icon" [class]="getActionClass(h.actionType)">
+              {{ getActionIcon(h.actionType) }}
+            </div>
+            <div class="hi-body">
+              <div class="hi-desc">{{ h.description }}</div>
+              <div class="hi-date">{{ h.createdAt }}</div>
+            </div>
+            <div class="hi-right">
+              <div class="hi-points" [class]="getActionClass(h.actionType)">
+                {{ h.actionType === 'EARNED' ? '+' : '−' }}{{ h.points | number }} pts
+              </div>
+              <div class="hi-balance">Balance: {{ h.balanceAfter | number }}</div>
+            </div>
+          </div>
+        }
+      </div>
+
+      @if (hasMore()) {
+        <button class="load-more-btn" (click)="loadMore()" [disabled]="historyLoading()">
+          @if (historyLoading()) { <span class="spinner"></span> }
+          Load More
+        </button>
+      }
+    }
+  </div>
+}

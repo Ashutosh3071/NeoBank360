@@ -1,0 +1,160 @@
+<!------- customer-account.component.html ------->
+
+<!-- Account Selector -->
+@if (accounts.length > 1) {
+  <div class="acc-tabs">
+    @for (acc of accounts; track acc.accountNumber) {
+      <button class="acc-tab" [class.acc-tab-active]="selectedAccount()?.accountNumber === acc.accountNumber"
+        (click)="selectAccount(acc)">
+        {{ acc.accountType }} · ····{{ acc.accountNumber.slice(-4) }}
+      </button>
+    }
+  </div>
+}
+
+<!-- ── SUMMARY ── -->
+@if (activeSubSection === 'accounts-summary' || activeSubSection === 'accounts-savings') {
+  @if (selectedAccount()) {
+    <div class="section-head">
+      <h1>{{ sectionTitle }}</h1>
+      <p>{{ selectedAccount().accountType }} Account · {{ selectedAccount().accountNumber }}</p>
+    </div>
+
+    <!-- Balance Card -->
+    <div class="balance-card">
+      <div class="bc-label">Available Balance</div>
+      <div class="bc-amount">{{ formatAmount(selectedAccount().availableBalance) }}</div>
+      <div class="bc-total">Total Balance: {{ formatAmount(selectedAccount().balance) }}</div>
+      <div class="bc-status" [class]="'bs-' + selectedAccount().status.toLowerCase()">
+        {{ selectedAccount().status }}
+      </div>
+    </div>
+
+    <!-- Account Details Grid -->
+    <div class="detail-cards">
+      <div class="detail-card">
+        <div class="dc-icon">🏦</div>
+        <div class="dc-body">
+          <div class="dc-label">Account Number</div>
+          <div class="dc-value mono">{{ selectedAccount().accountNumber }}</div>
+        </div>
+      </div>
+      <div class="detail-card">
+        <div class="dc-icon">🔀</div>
+        <div class="dc-body">
+          <div class="dc-label">IFSC Code</div>
+          <div class="dc-value mono">{{ selectedAccount().ifscCode }}</div>
+        </div>
+      </div>
+      <div class="detail-card">
+        <div class="dc-icon">🏢</div>
+        <div class="dc-body">
+          <div class="dc-label">Branch</div>
+          <div class="dc-value">{{ selectedAccount().branchName }}</div>
+        </div>
+      </div>
+      <div class="detail-card">
+        <div class="dc-icon">📅</div>
+        <div class="dc-body">
+          <div class="dc-label">Opened On</div>
+          <div class="dc-value">{{ selectedAccount().openedOn }}</div>
+        </div>
+      </div>
+      <div class="detail-card">
+        <div class="dc-icon">💹</div>
+        <div class="dc-body">
+          <div class="dc-label">Interest Rate</div>
+          <div class="dc-value">{{ selectedAccount().interestRate }}% p.a.</div>
+        </div>
+      </div>
+      <div class="detail-card">
+        <div class="dc-icon">💰</div>
+        <div class="dc-body">
+          <div class="dc-label">Minimum Balance</div>
+          <div class="dc-value">{{ formatAmount(selectedAccount().minimumBalance) }}</div>
+        </div>
+      </div>
+      <div class="detail-card">
+        <div class="dc-icon">👨‍👩‍👦</div>
+        <div class="dc-body">
+          <div class="dc-label">Nominee</div>
+          <div class="dc-value">{{ selectedAccount().nomineeName || '—' }}</div>
+        </div>
+      </div>
+      <div class="detail-card">
+        <div class="dc-icon">⏰</div>
+        <div class="dc-body">
+          <div class="dc-label">Last Transaction</div>
+          <div class="dc-value">{{ selectedAccount().lastTransactionAt || 'No transactions yet' }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Services Enabled -->
+    <div class="services-card">
+      <h3>Services Enabled</h3>
+      <div class="services-grid">
+        <div class="svc" [class.svc-on]="selectedAccount().netBankingEnabled">
+          <span>🌐</span><span>Net Banking</span>
+          <span class="svc-badge">{{ selectedAccount().netBankingEnabled ? 'ON' : 'OFF' }}</span>
+        </div>
+        <div class="svc" [class.svc-on]="selectedAccount().upiEnabled">
+          <span>📱</span><span>UPI</span>
+          <span class="svc-badge">{{ selectedAccount().upiEnabled ? 'ON' : 'OFF' }}</span>
+        </div>
+        <div class="svc" [class.svc-on]="selectedAccount().debitCardEnabled">
+          <span>💳</span><span>Debit Card</span>
+          <span class="svc-badge">{{ selectedAccount().debitCardEnabled ? 'ON' : 'OFF' }}</span>
+        </div>
+      </div>
+    </div>
+  }
+}
+
+<!-- ── STATEMENTS ── -->
+@if (activeSubSection === 'accounts-statements') {
+  <div class="section-head">
+    <h1>Account Statements</h1>
+    <p>{{ selectedAccount()?.accountNumber }}</p>
+  </div>
+
+  @if (txnLoading()) {
+    <div class="t-loading"><div class="spin-ring"></div><p>Loading transactions...</p></div>
+  } @else if (transactions().length === 0) {
+    <div class="empty-txn">
+      <div class="empty-icon">📭</div>
+      <h3>No Transactions</h3>
+      <p>No transactions found for this account.</p>
+    </div>
+  } @else {
+    <div class="txn-list">
+      @for (txn of transactions(); track txn.id) {
+        <div class="txn-item" [class]="txnColor(txn.transactionType, selectedAccount()?.accountNumber, txn)">
+          <div class="txn-icon">{{ txnIcon(txn.transactionType) }}</div>
+          <div class="txn-body">
+            <div class="txn-type">{{ txn.transactionType }}</div>
+            <div class="txn-ref">{{ txn.referenceNumber }}</div>
+            <div class="txn-date">{{ txn.createdAt }}</div>
+          </div>
+          <div class="txn-amount-wrap">
+            <div class="txn-amount" [class.txn-credit]="txnColor(txn.transactionType, selectedAccount()?.accountNumber, txn) === 'credit'" [class.txn-debit]="txnColor(txn.transactionType, selectedAccount()?.accountNumber, txn) === 'debit'">
+              {{ txnColor(txn.transactionType, selectedAccount()?.accountNumber, txn) === 'credit' ? '+' : '-' }}{{ formatAmount(txn.amount) }}
+            </div>
+            <div class="txn-bal">Bal: {{ formatAmount(txn.balanceAfter) }}</div>
+            <span class="txn-status" [class]="'ts-' + txn.status.toLowerCase()">{{ txn.status }}</span>
+          </div>
+        </div>
+      }
+    </div>
+
+    @if (totalPages() > 1) {
+      <div class="pagination">
+        <button (click)="goToPage(page() - 1)" [disabled]="page() === 0" class="pg-btn">← Prev</button>
+        @for (p of pageNumbers; track p) {
+          <button class="pg-btn pg-num" [class.pg-active]="p === page()" (click)="goToPage(p)">{{ p + 1 }}</button>
+        }
+        <button (click)="goToPage(page() + 1)" [disabled]="page() >= totalPages() - 1" class="pg-btn">Next →</button>
+      </div>
+    }
+  }
+}

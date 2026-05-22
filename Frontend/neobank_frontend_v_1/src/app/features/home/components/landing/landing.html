@@ -1,0 +1,524 @@
+﻿<!---------------------------  landing.html  --------------------------->
+<div class="landing">
+
+  <!-- ══════════════════════════════════════════
+       SIDEBAR OVERLAY
+  ══════════════════════════════════════════ -->
+  @if (sidebarOpen()) {
+    <div class="sidebar-overlay" (click)="closeSidebar()"></div>
+  }
+
+  <!-- ══════════════════════════════════════════
+       SIDEBAR
+  ══════════════════════════════════════════ -->
+  <div class="sidebar" [class.sidebar-open]="sidebarOpen()">
+
+    <div class="sidebar-header">
+      <div class="logo">
+        <span class="logo-icon">N</span>
+        <span class="logo-text">NeoBank</span>
+      </div>
+      <button class="sidebar-close" (click)="closeSidebar()">✕</button>
+    </div>
+
+    <div class="sidebar-menu">
+
+      <div class="sidebar-section-label">Application</div>
+
+      <button class="sidebar-item" (click)="openStatusPopup()">
+        <span class="sidebar-item-icon">🔍</span>
+        <span class="sidebar-item-text">View Application Status</span>
+        <span class="sidebar-item-arrow">›</span>
+      </button>
+
+      <div class="sidebar-section-label">Settings</div>
+
+      <button class="sidebar-item" (click)="cycleTheme()">
+        <span class="sidebar-item-icon">{{ isDarkMode() ? '☀️' : '🌙' }}</span>
+        <span class="sidebar-item-text">{{ isDarkMode() ? 'Light Mode' : 'Dark Mode' }}</span>
+        <span class="sidebar-item-arrow">›</span>
+      </button>
+
+    </div>
+
+    <div class="sidebar-footer">
+      <a routerLink="/login"    class="btn btn-secondary w-full" (click)="closeSidebar()">Login</a>
+      <a routerLink="/register" class="btn btn-primary w-full"   (click)="closeSidebar()">Get Started</a>
+      <a routerLink="/register-openaccount" class="btn btn-primary w-full"   (click)="closeSidebar()">Open Account</a>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       APPLICATION STATUS POPUP
+  ══════════════════════════════════════════ -->
+  @if (showStatusPopup()) {
+    <div class="modal-backdrop" (click)="closeStatusPopup()">
+      <div class="status-modal" (click)="$event.stopPropagation()">
+
+        <!-- Modal Header -->
+        <div class="status-modal-header">
+          <h3>🔍 Application Status</h3>
+          <button class="modal-close-btn" (click)="closeStatusPopup()">✕</button>
+        </div>
+
+        <!-- ─────────────────────────────
+             STEP 1: Enter Query
+        ───────────────────────────── -->
+        @if (statusStep() === 'input') {
+          <div class="status-body">
+            <p class="status-hint">
+              Enter your <strong>Application ID</strong> (e.g. NB20260000001)
+              or <strong>registered Email</strong> to receive an OTP.
+            </p>
+
+            @if (statusError()) {
+              <div class="s-alert s-alert-error">{{ statusError() }}</div>
+            }
+
+            <div class="form-group">
+              <label>Application ID or Email <span class="req">*</span></label>
+              <input
+                type="text"
+                class="s-input"
+                [(ngModel)]="searchQuery"
+                placeholder="NB20260000001 or email@example.com"
+                (keyup.enter)="sendStatusOtp()"
+              />
+            </div>
+
+            <button
+              class="btn btn-primary w-full"
+              (click)="sendStatusOtp()"
+              [disabled]="statusLoading()"
+            >
+              @if (statusLoading()) { <span class="spinner"></span> Sending... }
+              @else { Send OTP → }
+            </button>
+          </div>
+        }
+
+        <!-- ─────────────────────────────
+             STEP 2: Enter OTP
+        ───────────────────────────── -->
+        @if (statusStep() === 'otp') {
+          <div class="status-body">
+
+            <div class="otp-icon">🔐</div>
+            <p class="status-hint">
+              A 6-digit OTP has been sent to your registered email.<br>
+              Enter it below to view your application details.
+            </p>
+
+            @if (statusError()) {
+              <div class="s-alert s-alert-error">{{ statusError() }}</div>
+            }
+            @if (statusSuccess()) {
+              <div class="s-alert s-alert-success">{{ statusSuccess() }}</div>
+            }
+
+            <div class="form-group">
+              <label>Enter OTP <span class="req">*</span></label>
+              <input
+                type="text"
+                class="s-input s-input-otp"
+                [(ngModel)]="statusOtp"
+                placeholder="• • • • • •"
+                maxlength="6"
+                inputmode="numeric"
+                (keyup.enter)="verifyStatusOtp()"
+              />
+            </div>
+
+            <button
+              class="btn btn-primary w-full"
+              (click)="verifyStatusOtp()"
+              [disabled]="statusLoading()"
+            >
+              @if (statusLoading()) { <span class="spinner"></span> Verifying... }
+              @else { Verify & View Status }
+            </button>
+
+            <div class="otp-footer">
+              <button class="link-btn" (click)="goBackToInput()">← Change ID / Email</button>
+              <span>·</span>
+              <button class="link-btn" (click)="resendStatusOtp()" [disabled]="statusLoading()">
+                Resend OTP
+              </button>
+            </div>
+          </div>
+        }
+
+        <!-- ─────────────────────────────
+             STEP 3: Result
+        ───────────────────────────── -->
+        @if (statusStep() === 'result' && statusResult()) {
+          <div class="status-body">
+
+            <!-- Status Banner -->
+            <div class="status-banner" [class]="getStatusClass(statusResult()!.status)">
+              <span class="status-banner-icon">{{ getStatusIcon(statusResult()!.status) }}</span>
+              <div>
+                <div class="status-banner-title">{{ statusResult()!.status }}</div>
+                <div class="status-banner-sub">{{ getStatusMessage(statusResult()!.status) }}</div>
+              </div>
+            </div>
+
+            <!-- Application ID Badge -->
+            <div class="app-id-badge">
+              <span class="app-id-label">Application ID</span>
+              <span class="app-id-value">{{ statusResult()!.applicationId }}</span>
+            </div>
+
+            <!-- Personal Info -->
+            <div class="review-section">
+              <h4 class="review-section-title">Personal Information</h4>
+              <div class="review-grid">
+                <div class="review-item">
+                  <span>Account Type</span>
+                  <strong>{{ statusResult()!.accountType }}</strong>
+                </div>
+                <div class="review-item">
+                  <span>Full Name</span>
+                  <strong>{{ statusResult()!.fullName }}</strong>
+                </div>
+                <div class="review-item">
+                  <span>Father's Name</span>
+                  <strong>{{ statusResult()!.fatherName }}</strong>
+                </div>
+                <div class="review-item">
+                  <span>Mother's Name</span>
+                  <strong>{{ statusResult()!.motherName }}</strong>
+                </div>
+                <div class="review-item">
+                  <span>Date of Birth</span>
+                  <strong>{{ statusResult()!.dateOfBirth }}</strong>
+                </div>
+                <div class="review-item">
+                  <span>Gender</span>
+                  <strong>{{ statusResult()!.gender }}</strong>
+                </div>
+                <div class="review-item">
+                  <span>Marital Status</span>
+                  <strong>{{ statusResult()!.maritalStatus || '—' }}</strong>
+                </div>
+                <div class="review-item">
+                  <span>Nationality</span>
+                  <strong>{{ statusResult()!.nationality || '—' }}</strong>
+                </div>
+                <div class="review-item">
+                  <span>Occupation</span>
+                  <strong>{{ statusResult()!.occupation }}</strong>
+                </div>
+                <div class="review-item">
+                  <span>Annual Income</span>
+                  <strong>{{ statusResult()!.annualIncome ? '₹' + statusResult()!.annualIncome : '—' }}</strong>
+                </div>
+                <div class="review-item">
+                  <span>Mobile</span>
+                  <strong>{{ statusResult()!.phoneNumber }}</strong>
+                </div>
+                <div class="review-item">
+                  <span>Email</span>
+                  <strong>{{ statusResult()!.emailId }}</strong>
+                </div>
+                <div class="review-item">
+                  <span>Aadhaar No</span>
+                  <strong>{{ statusResult()!.aadhaarNumber }}</strong>
+                </div>
+                <div class="review-item">
+                  <span>PAN No</span>
+                  <strong>{{ statusResult()!.panNumber }}</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- Address -->
+            <div class="review-section">
+              <h4 class="review-section-title">Address Details</h4>
+              <div class="address-blocks">
+                <div class="address-block">
+                  <div class="address-label">Current Address</div>
+                  <div class="address-text">
+                    {{ statusResult()!.currentAddressLine }}<br>
+                    {{ statusResult()!.currentCity }},
+                    {{ statusResult()!.currentState }} –
+                    {{ statusResult()!.currentPincode }}
+                  </div>
+                </div>
+                <div class="address-block">
+                  <div class="address-label">Permanent Address</div>
+                  <div class="address-text">
+                    {{ statusResult()!.permanentAddressLine }}<br>
+                    {{ statusResult()!.permanentCity }},
+                    {{ statusResult()!.permanentState }} –
+                    {{ statusResult()!.permanentPincode }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Nominee -->
+            <div class="review-section">
+              <h4 class="review-section-title">Nominee Details</h4>
+              <div class="review-grid">
+                <div class="review-item">
+                  <span>Name</span>
+                  <strong>{{ statusResult()!.nomineeName }}</strong>
+                </div>
+                <div class="review-item">
+                  <span>Relation</span>
+                  <strong>{{ statusResult()!.nomineeRelation }}</strong>
+                </div>
+                <div class="review-item">
+                  <span>Age</span>
+                  <strong>{{ statusResult()!.nomineeAge }}</strong>
+                </div>
+                <div class="review-item">
+                  <span>Mobile</span>
+                  <strong>{{ statusResult()!.nomineeMobileNumber }}</strong>
+                </div>
+              </div>
+              <div class="review-item full-width">
+                <span>Address</span>
+                <strong>{{ statusResult()!.nomineeAddress }}</strong>
+              </div>
+            </div>
+
+            <!-- Submitted On -->
+            <div class="submitted-row">
+              <span>Submitted On</span>
+              <strong>{{ statusResult()!.submittedOn }}</strong>
+            </div>
+
+            <!-- Action -->
+            <button class="btn btn-outline w-full mt-2" (click)="goBackToInput()">
+              ← Check Another Application
+            </button>
+
+          </div>
+        }
+
+      </div>
+    </div>
+  }
+
+  <!-- ══════════════════════════════════════════
+       HEADER
+  ══════════════════════════════════════════ -->
+  <header class="header">
+    <div class="container header-content">
+
+      <button
+        class="menu-btn"
+        (click)="toggleSidebar()"
+        [style.color]="isDarkMode() ? '#ffffff' : '#1e293b'"
+      >☰</button>
+
+      <div class="logo">
+        <span class="logo-icon">N</span>
+        <span class="logo-text">NeoBank</span>
+      </div>
+
+      <nav class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+      </nav>
+
+      <div class="header-actions">
+        <a routerLink="/login"    class="btn btn-secondary">Login</a>
+        <a routerLink="/register" class="btn btn-primary">Get Started</a>
+        <a routerLink="/register-openaccount" class="btn btn-primary">Open Account</a>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════════════
+       HERO
+  ══════════════════════════════════════════ -->
+  <section class="hero">
+    <div class="container hero-content">
+      <div class="hero-text">
+        <h1 class="hero-title">
+          The Future of <span class="highlight">Banking</span> is Here
+        </h1>
+        <p class="hero-subtitle">
+          Experience seamless financial management with NeoBank.
+          Secure, fast, and smart banking solutions designed for the modern world.
+        </p>
+        <div class="hero-buttons">
+          <a routerLink="/register-openaccount" class="btn btn-primary btn-lg">Create Account</a>
+          <a href="#features"       class="btn btn-secondary btn-lg">Learn More</a>
+        </div>
+        <div class="hero-stats">
+          <div class="stat">
+            <span class="stat-value">500K+</span>
+            <span class="stat-label">Customers</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value">50+</span>
+            <span class="stat-label">Countries</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value">99.9%</span>
+            <span class="stat-label">Uptime</span>
+          </div>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="card-visual">
+          <div class="card-balance">
+            <span class="balance-label">Total Balance</span>
+            <span class="balance-value">₹12,50,000.00</span>
+          </div>
+          <div class="card-info">
+            <div class="card-number">**** **** **** 4582</div>
+            <div class="card-expiry">12/28</div>
+          </div>
+          <div class="card-logo">NeoBank</div>
+        </div>
+        <div class="floating-elements">
+          <div class="float-item float-1">+₹50,000</div>
+          <div class="float-item float-2">-₹25,000</div>
+          <div class="float-item float-3">UPI</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       FEATURES
+  ══════════════════════════════════════════ -->
+  <section id="features" class="features">
+    <div class="container">
+      <div class="section-header">
+        <h2>Why Choose NeoBank?</h2>
+        <p>Powerful features to manage your money with complete control</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <h3>Instant Transfers</h3>
+          <p>Send money instantly via UPI, NEFT, IMPS, or internal transfers with zero delays.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔒</div>
+          <h3>Bank-Grade Security</h3>
+          <p>Your data is protected with enterprise-level encryption and multi-factor authentication.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📱</div>
+          <h3>Easy KYC</h3>
+          <p>Complete your verification in minutes with our simple wizard-based KYC process.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📊</div>
+          <h3>Smart Analytics</h3>
+          <p>Track your spending patterns and manage budgets with detailed financial insights.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">💳</div>
+          <h3>Multi-Account</h3>
+          <p>Manage savings and current accounts all in one place with real-time tracking.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🌍</div>
+          <h3>Global Access</h3>
+          <p>Access your accounts from anywhere in the world, anytime.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       ABOUT
+  ══════════════════════════════════════════ -->
+  <section id="about" class="about">
+    <div class="container">
+      <div class="about-content">
+        <div class="about-text">
+          <h2>Banking Made Simple</h2>
+          <p>
+            NeoBank brings you the next generation of digital banking.
+            With our intuitive interface and powerful features,
+            managing your finances has never been easier.
+          </p>
+          <ul class="about-features">
+            <li>✓ Zero hidden charges</li>
+            <li>✓ 24/7 customer support</li>
+            <li>✓ Instant account creation</li>
+            <li>✓ Real-time notifications</li>
+          </ul>
+        </div>
+        <div class="about-visual">
+          <div class="phone-mockup">
+            <div class="phone-screen">
+              <div class="app-header">NeoBank</div>
+              <div class="app-balance">₹12,50,000</div>
+              <div class="app-actions">
+                <div class="app-action">Send</div>
+                <div class="app-action">Request</div>
+                <div class="app-action">Scan</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       CTA
+  ══════════════════════════════════════════ -->
+  <section class="cta">
+    <div class="container">
+      <div class="cta-content">
+        <h2>Ready to Get Started?</h2>
+        <p>Join thousands of users who have already switched to NeoBank</p>
+        <a routerLink="/register-openaccount" class="btn btn-primary btn-lg">Create Free Account</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       FOOTER
+  ══════════════════════════════════════════ -->
+  <footer class="footer">
+    <div class="container footer-content">
+      <div class="footer-brand">
+        <div class="logo">
+          <span class="logo-icon">N</span>
+          <span class="logo-text">NeoBank</span>
+        </div>
+        <p>The future of digital banking</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-column">
+          <h4>Product</h4>
+          <a href="#">Features</a>
+          <a href="#">Pricing</a>
+          <a href="#">Security</a>
+        </div>
+        <div class="footer-column">
+          <h4>Company</h4>
+          <a href="#">About</a>
+          <a href="#">Careers</a>
+          <a href="#">Contact</a>
+        </div>
+        <div class="footer-column">
+          <h4>Legal</h4>
+          <a href="#">Privacy</a>
+          <a href="#">Terms</a>
+          <a href="#">FAQ</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="container">
+        <p>&copy; 2026 NeoBank. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+</div>

@@ -1,0 +1,176 @@
+<!------- admin-account.component.html ------->
+
+@if (error())   { <div class="a-alert a-err">{{ error() }}<button (click)="error.set('')">✕</button></div> }
+@if (success()) { <div class="a-alert a-ok">{{ success() }}<button (click)="success.set('')">✕</button></div> }
+
+<div class="section-head">
+  <div>
+    <h1>{{ sectionTitle }}</h1>
+    <p>{{ totalElements() }} total accounts</p>
+  </div>
+  <div class="head-actions">
+    <div class="search-box">
+      <span>🔍</span>
+      <input type="text" [(ngModel)]="searchQuery" placeholder="Search account no, IFSC..." class="search-input" />
+    </div>
+    <button class="refresh-btn" (click)="loadAccounts()" [disabled]="loading()">↺</button>
+  </div>
+</div>
+
+<div class="table-wrap">
+  @if (loading() && accounts().length === 0) {
+    <div class="t-loading"><div class="spin-ring"></div><p>Loading accounts...</p></div>
+  } @else if (filteredAccounts.length === 0) {
+    <div class="empty-state">
+      <div>🏦</div><h3>No Accounts Found</h3><p>No accounts in this category.</p>
+    </div>
+  } @else {
+    <table class="a-table">
+      <thead>
+        <tr>
+          <th>Account Number</th>
+          <th>Type</th>
+          <th>Balance</th>
+          <th>Status</th>
+          <th>Branch</th>
+          <th>Opened On</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (acc of filteredAccounts; track acc.id) {
+          <tr class="t-row">
+            <td class="mono">{{ acc.accountNumber }}</td>
+            <td><span class="type-badge">{{ acc.accountType }}</span></td>
+            <td>
+              <div class="bal-cell">
+                <div class="bal-main">{{ formatAmount(acc.balance) }}</div>
+                <div class="bal-avail">Avail: {{ formatAmount(acc.availableBalance) }}</div>
+              </div>
+            </td>
+            <td><span class="st-badge" [class]="getStatusClass(acc.status)">{{ acc.status }}</span></td>
+            <td>
+              <div>{{ acc.branchName }}</div>
+              <div class="ifsc">{{ acc.ifscCode }}</div>
+            </td>
+            <td class="date-cell">{{ acc.openedOn }}</td>
+            <td>
+              <div class="row-actions">
+                <button class="act-btn act-dep"  (click)="openDeposit(acc)">⬇ Deposit</button>
+                <button class="act-btn act-with" (click)="openWithdraw(acc)">⬆ Withdraw</button>
+                <button class="act-btn act-st"   (click)="openStatus(acc)">⚙ Status</button>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    @if (totalPages() > 1) {
+      <div class="pagination">
+        <button class="pg-btn" (click)="goToPage(page() - 1)" [disabled]="page() === 0">← Prev</button>
+        @for (p of pageNumbers; track p) {
+          <button class="pg-btn pg-num" [class.pg-active]="p === page()" (click)="goToPage(p)">{{ p + 1 }}</button>
+        }
+        <button class="pg-btn" (click)="goToPage(page() + 1)" [disabled]="page() >= totalPages() - 1">Next →</button>
+      </div>
+    }
+  }
+</div>
+
+<!-- Deposit Modal -->
+@if (modalMode() === 'deposit' && selectedAccount()) {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-hdr"><h3>💰 Deposit Money</h3><button class="modal-close" (click)="closeModal()">✕</button></div>
+      <div class="modal-body">
+        <div class="acc-info-row">
+          <span class="mono">{{ selectedAccount().accountNumber }}</span>
+          <span class="bal-chip">Bal: {{ formatAmount(selectedAccount().balance) }}</span>
+        </div>
+        @if (error()) { <div class="a-alert a-err">{{ error() }}</div> }
+        <div class="form-group">
+          <label>Amount (₹) *</label>
+          <input type="number" class="m-input" [(ngModel)]="txnAmount" placeholder="Enter amount" min="1" />
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" class="m-input" [(ngModel)]="txnDescription" placeholder="Optional" />
+        </div>
+      </div>
+      <div class="modal-ftr">
+        <button class="m-btn-outline" (click)="closeModal()" [disabled]="actionLoading()">Cancel</button>
+        <button class="m-btn-green" (click)="submitDeposit()" [disabled]="actionLoading()">
+          @if (actionLoading()) { <span class="spinner"></span> } ⬇ Deposit
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Withdraw Modal -->
+@if (modalMode() === 'withdraw' && selectedAccount()) {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-hdr"><h3>⬆ Withdraw Money</h3><button class="modal-close" (click)="closeModal()">✕</button></div>
+      <div class="modal-body">
+        <div class="acc-info-row">
+          <span class="mono">{{ selectedAccount().accountNumber }}</span>
+          <span class="bal-chip">Avail: {{ formatAmount(selectedAccount().availableBalance) }}</span>
+        </div>
+        @if (error()) { <div class="a-alert a-err">{{ error() }}</div> }
+        <div class="form-group">
+          <label>Amount (₹) *</label>
+          <input type="number" class="m-input" [(ngModel)]="txnAmount" placeholder="Enter amount"
+            min="1" [max]="selectedAccount().availableBalance" />
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" class="m-input" [(ngModel)]="txnDescription" placeholder="Optional" />
+        </div>
+      </div>
+      <div class="modal-ftr">
+        <button class="m-btn-outline" (click)="closeModal()" [disabled]="actionLoading()">Cancel</button>
+        <button class="m-btn-red" (click)="submitWithdraw()" [disabled]="actionLoading()">
+          @if (actionLoading()) { <span class="spinner"></span> } ⬆ Withdraw
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Status Modal -->
+@if (modalMode() === 'status' && selectedAccount()) {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-hdr"><h3>⚙ Update Status</h3><button class="modal-close" (click)="closeModal()">✕</button></div>
+      <div class="modal-body">
+        <div class="acc-info-row">
+          <span class="mono">{{ selectedAccount().accountNumber }}</span>
+          <span class="st-badge" [class]="getStatusClass(selectedAccount().status)">{{ selectedAccount().status }}</span>
+        </div>
+        @if (error()) { <div class="a-alert a-err">{{ error() }}</div> }
+        <div class="form-group">
+          <label>New Status</label>
+          <select class="m-select" [(ngModel)]="newStatus">
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="INACTIVE">INACTIVE</option>
+            <option value="FROZEN">FROZEN</option>
+            <option value="DORMANT">DORMANT</option>
+            <option value="CLOSED">CLOSED</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Reason</label>
+          <input type="text" class="m-input" [(ngModel)]="statusReason" placeholder="Optional reason" />
+        </div>
+      </div>
+      <div class="modal-ftr">
+        <button class="m-btn-outline" (click)="closeModal()" [disabled]="actionLoading()">Cancel</button>
+        <button class="m-btn-primary" (click)="submitStatusUpdate()" [disabled]="actionLoading()">
+          @if (actionLoading()) { <span class="spinner"></span> } Update
+        </button>
+      </div>
+    </div>
+  </div>
+}

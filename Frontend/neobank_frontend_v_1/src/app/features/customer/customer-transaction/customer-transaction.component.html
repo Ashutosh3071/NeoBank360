@@ -1,0 +1,672 @@
+<!------- customer-transaction.component.html ------->
+
+<!-- ══════════════════════════════════════════
+     TRANSFER SECTIONS
+══════════════════════════════════════════ -->
+@if (activeSubSection !== 'transactions') {
+
+  <!-- Global Error -->
+  @if (error()) {
+    <div class="txn-alert txn-err">
+      <span>⚠ {{ error() }}</span>
+      <button (click)="error.set('')">✕</button>
+    </div>
+  }
+
+  <!-- ══ SUCCESS SCREEN ══ -->
+  @if (step() === 'success' && lastTxn()) {
+    <div class="success-screen">
+      <div class="ss-wrap">
+        <div class="ss-circle">✓</div>
+        <h2>Transfer Successful!</h2>
+        <p>Your payment has been processed.</p>
+
+        <div class="ss-card">
+          <div class="ss-row">
+            <span>Reference No</span>
+            <strong class="mono">{{ lastTxn().referenceNumber }}</strong>
+          </div>
+          <div class="ss-row">
+            <span>Amount</span>
+            <strong class="ss-amount">{{ formatAmount(lastTxn().amount) }}</strong>
+          </div>
+          @if (activeSubSection === 'transfer-upi') {
+            <div class="ss-row"><span>UPI ID</span><strong>{{ lastTxn().upiId }}</strong></div>
+          }
+          @if (activeSubSection === 'transfer-neft') {
+            <div class="ss-row"><span>Beneficiary</span><strong>{{ lastTxn().beneficiaryName }}</strong></div>
+            <div class="ss-row"><span>Account</span><strong class="mono">{{ lastTxn().toAccountNumber }}</strong></div>
+          }
+          @if (activeSubSection === 'transfer-self') {
+            <div class="ss-row"><span>To Account</span><strong class="mono">{{ lastTxn().toAccountNumber }}</strong></div>
+          }
+          <div class="ss-row">
+            <span>Type</span>
+            <strong>{{ lastTxn().transactionType }}</strong>
+          </div>
+          <div class="ss-row">
+            <span>Status</span>
+            <span class="ss-status">✅ {{ lastTxn().status }}</span>
+          </div>
+          @if (lastTxn().balanceAfter) {
+            <div class="ss-row">
+              <span>Balance After</span>
+              <strong>{{ formatAmount(lastTxn().balanceAfter) }}</strong>
+            </div>
+          }
+          <div class="ss-row"><span>Date & Time</span><strong>{{ lastTxn().processedAt }}</strong></div>
+        </div>
+
+        <button class="btn-new-transfer" (click)="startNew()">+ New Transfer</button>
+      </div>
+    </div>
+  }
+
+  <!-- ══ CONFIRM SCREEN ══ -->
+  @if (step() === 'confirm') {
+    <div class="section-head">
+      <h1>Confirm {{ sectionTitle }}</h1>
+      <p>Review details before proceeding</p>
+    </div>
+
+    <div class="confirm-card">
+      <div class="confirm-icon">
+        @if (activeSubSection === 'transfer-upi')  { 📱 }
+        @if (activeSubSection === 'transfer-neft') { 🏦 }
+        @if (activeSubSection === 'transfer-self') { ↔️ }
+      </div>
+
+      @if (activeSubSection === 'transfer-upi') {
+        <div class="confirm-row"><span>From Account</span><strong class="mono">{{ upiForm.fromAccount }}</strong></div>
+        <div class="confirm-row"><span>UPI ID</span><strong>{{ upiForm.upiId }}</strong></div>
+        <div class="confirm-row amount-row">
+          <span>Amount</span>
+          <strong class="confirm-amount">{{ formatAmount(upiForm.amount) }}</strong>
+        </div>
+        @if (upiForm.description) {
+          <div class="confirm-row"><span>Note</span><strong>{{ upiForm.description }}</strong></div>
+        }
+      }
+
+      @if (activeSubSection === 'transfer-neft') {
+        <div class="confirm-row"><span>From Account</span><strong class="mono">{{ neftForm.fromAccount }}</strong></div>
+        <div class="confirm-row"><span>Mode</span><strong>{{ neftForm.mode }}</strong></div>
+        <div class="confirm-row"><span>Beneficiary Name</span><strong>{{ neftForm.beneficiaryName }}</strong></div>
+        <div class="confirm-row"><span>Account Number</span><strong class="mono">{{ neftForm.beneficiaryAccountNumber }}</strong></div>
+        <div class="confirm-row"><span>IFSC Code</span><strong class="mono">{{ neftForm.beneficiaryIfsc.toUpperCase() }}</strong></div>
+        @if (neftForm.beneficiaryBankName) {
+          <div class="confirm-row"><span>Bank</span><strong>{{ neftForm.beneficiaryBankName }}</strong></div>
+        }
+        <div class="confirm-row amount-row">
+          <span>Amount</span>
+          <strong class="confirm-amount">{{ formatAmount(neftForm.amount) }}</strong>
+        </div>
+      }
+
+      @if (activeSubSection === 'transfer-self') {
+        <div class="confirm-row"><span>From Account</span><strong class="mono">{{ selfForm.fromAccount }}</strong></div>
+        <div class="confirm-row"><span>To Account</span><strong class="mono">{{ selfForm.toAccount }}</strong></div>
+        <div class="confirm-row amount-row">
+          <span>Amount</span>
+          <strong class="confirm-amount">{{ formatAmount(selfForm.amount) }}</strong>
+        </div>
+        @if (selfForm.description) {
+          <div class="confirm-row"><span>Note</span><strong>{{ selfForm.description }}</strong></div>
+        }
+      }
+
+      <div class="confirm-warning">
+        ⚠ This action cannot be undone. Please verify all details.
+      </div>
+
+      <div class="confirm-actions">
+        <button class="btn-back" (click)="step.set('form')" [disabled]="loading()">← Edit</button>
+        <button class="btn-confirm" (click)="submit()" [disabled]="loading()">
+          @if (loading()) { <span class="spinner"></span> Processing... }
+          @else { Confirm & Pay }
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ══ FORM STEP ══ -->
+  @if (step() === 'form') {
+
+    <div class="section-head">
+      <h1>{{ sectionTitle }}</h1>
+      <p>Secure and instant — powered by NeoBank</p>
+    </div>
+
+    <!-- Balance Chip -->
+    @if (selectedFromAccount) {
+      <div class="balance-chip">
+        <span class="bc-label">Available Balance</span>
+        <span class="bc-amount">{{ formatAmount(selectedFromAccount.availableBalance) }}</span>
+        <span class="bc-account">{{ selectedFromAccount.accountNumber }}</span>
+      </div>
+    }
+
+    <!-- ── UPI FORM ── -->
+    @if (activeSubSection === 'transfer-upi') {
+      <div class="transfer-card">
+
+        <div class="form-group">
+          <label>From Account <span class="req">*</span></label>
+          <select class="t-select" [(ngModel)]="upiForm.fromAccount"
+            [class.is-error]="upiErrors.fromAccount">
+            @for (acc of accounts; track acc.accountNumber) {
+              <option [value]="acc.accountNumber">
+                {{ acc.accountType }} · {{ acc.accountNumber }} · {{ formatAmount(acc.availableBalance) }}
+              </option>
+            }
+          </select>
+          @if (upiErrors.fromAccount) { <span class="err-msg">{{ upiErrors.fromAccount }}</span> }
+        </div>
+
+        <div class="form-group">
+          <label>UPI ID <span class="req">*</span></label>
+          <div class="upi-input-wrap">
+            <span class="upi-icon">📱</span>
+            <input type="text" class="t-input upi-input"
+              [class.is-error]="upiErrors.upiId"
+              [class.is-valid]="upiIdValid() === true"
+              [(ngModel)]="upiForm.upiId"
+              (ngModelChange)="onUpiIdChange()"
+              placeholder="name@upi or 9876543210@upi" />
+            @if (upiValidating()) {
+              <span class="upi-status upi-checking">⏳</span>
+            }
+            @if (!upiValidating() && upiIdValid() === true) {
+              <span class="upi-status upi-ok">✓</span>
+            }
+            @if (!upiValidating() && upiIdValid() === false) {
+              <span class="upi-status upi-no">✗</span>
+            }
+          </div>
+          @if (upiIdMsg() && !upiErrors.upiId) {
+            <span class="upi-msg" [class.msg-ok]="upiIdValid() === true" [class.msg-err]="upiIdValid() === false">
+              {{ upiIdMsg() }}
+            </span>
+          }
+          @if (upiErrors.upiId) { <span class="err-msg">{{ upiErrors.upiId }}</span> }
+        </div>
+
+        <div class="form-group">
+          <label>Amount (₹) <span class="req">*</span></label>
+          <div class="amount-wrap">
+            <span class="rupee-sym">₹</span>
+            <input type="number" class="t-input amount-input"
+              [class.is-error]="upiErrors.amount"
+              [(ngModel)]="upiForm.amount"
+              placeholder="0.00" min="1" max="100000" step="0.01" />
+          </div>
+          @if (upiErrors.amount) { <span class="err-msg">{{ upiErrors.amount }}</span> }
+          <span class="field-hint">UPI limit: ₹1,00,000 per transaction</span>
+        </div>
+
+        <!-- Quick Amount Chips -->
+        <div class="quick-amounts">
+          <span class="qa-label">Quick:</span>
+          @for (amt of [100, 500, 1000, 2000, 5000]; track amt) {
+            <button type="button" class="qa-chip" (click)="upiForm.amount = amt.toString()">
+              ₹{{ amt.toLocaleString() }}
+            </button>
+          }
+        </div>
+
+        <div class="form-group">
+          <label>Note / Description</label>
+          <input type="text" class="t-input"
+            [(ngModel)]="upiForm.description"
+            placeholder="Optional message to recipient" maxlength="100" />
+        </div>
+
+        <button class="btn-proceed" (click)="goToConfirm()">
+          Review Payment →
+        </button>
+      </div>
+
+      <!-- UPI Info -->
+      <div class="info-card">
+        <h4>ℹ️ UPI Payment Info</h4>
+        <ul>
+          <li>UPI ID format: <code>name@upi</code> or <code>mobile@upi</code></li>
+          <li>The recipient must have a NeoBank account.</li>
+          <li>Maximum ₹1,00,000 per transaction</li>
+          <li>Transfers are instant and irreversible</li>
+        </ul>
+      </div>
+    }
+
+    <!-- ── NEFT FORM ── -->
+    @if (activeSubSection === 'transfer-neft') {
+      <div class="transfer-card">
+
+        <div class="form-group">
+          <label>From Account <span class="req">*</span></label>
+          <select class="t-select" [(ngModel)]="neftForm.fromAccount"
+            [class.is-error]="neftErrors.fromAccount">
+            @for (acc of accounts; track acc.accountNumber) {
+              <option [value]="acc.accountNumber">
+                {{ acc.accountType }} · {{ acc.accountNumber }} · {{ formatAmount(acc.availableBalance) }}
+              </option>
+            }
+          </select>
+          @if (neftErrors.fromAccount) { <span class="err-msg">{{ neftErrors.fromAccount }}</span> }
+        </div>
+
+        <!-- Mode tabs -->
+        <div class="mode-tabs">
+          <button class="mode-tab" [class.mode-active]="neftForm.mode === 'NEFT'"
+            (click)="neftForm.mode = 'NEFT'">
+            NEFT <span class="mode-sub">Up to ₹2L</span>
+          </button>
+          <button class="mode-tab" [class.mode-active]="neftForm.mode === 'RTGS'"
+            (click)="neftForm.mode = 'RTGS'">
+            RTGS <span class="mode-sub">Above ₹2L</span>
+          </button>
+        </div>
+
+        <div class="section-divider">Beneficiary Details</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Account Number <span class="req">*</span></label>
+            <input type="text" class="t-input"
+              [class.is-error]="neftErrors.beneficiaryAccountNumber"
+              [(ngModel)]="neftForm.beneficiaryAccountNumber"
+              placeholder="Beneficiary account number" />
+            @if (neftErrors.beneficiaryAccountNumber) {
+              <span class="err-msg">{{ neftErrors.beneficiaryAccountNumber }}</span>
+            }
+          </div>
+          <div class="form-group">
+            <label>IFSC Code <span class="req">*</span></label>
+            <input type="text" class="t-input"
+              [class.is-error]="neftErrors.beneficiaryIfsc"
+              [(ngModel)]="neftForm.beneficiaryIfsc"
+              placeholder="e.g. SBIN0001234"
+              maxlength="11"
+              style="text-transform: uppercase" />
+            @if (neftErrors.beneficiaryIfsc) {
+              <span class="err-msg">{{ neftErrors.beneficiaryIfsc }}</span>
+            }
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Beneficiary Name <span class="req">*</span></label>
+            <input type="text" class="t-input"
+              [class.is-error]="neftErrors.beneficiaryName"
+              [(ngModel)]="neftForm.beneficiaryName"
+              placeholder="Full name as per bank" />
+            @if (neftErrors.beneficiaryName) {
+              <span class="err-msg">{{ neftErrors.beneficiaryName }}</span>
+            }
+          </div>
+          <div class="form-group">
+            <label>Bank Name</label>
+            <input type="text" class="t-input"
+              [(ngModel)]="neftForm.beneficiaryBankName"
+              placeholder="e.g. State Bank of India" />
+          </div>
+        </div>
+
+        <div class="section-divider">Transfer Amount</div>
+
+        <div class="form-group">
+          <label>Amount (₹) <span class="req">*</span></label>
+          <div class="amount-wrap">
+            <span class="rupee-sym">₹</span>
+            <input type="number" class="t-input amount-input"
+              [class.is-error]="neftErrors.amount"
+              [(ngModel)]="neftForm.amount"
+              placeholder="0.00" min="1" step="0.01" />
+          </div>
+          @if (neftErrors.amount) { <span class="err-msg">{{ neftErrors.amount }}</span> }
+          @if (neftForm.mode === 'RTGS') {
+            <span class="field-hint">RTGS minimum: ₹2,00,000</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label>Remarks</label>
+          <input type="text" class="t-input"
+            [(ngModel)]="neftForm.description"
+            placeholder="Optional payment reference" maxlength="100" />
+        </div>
+
+        <button class="btn-proceed" (click)="goToConfirm()">
+          Review Transfer →
+        </button>
+      </div>
+
+      <div class="info-card">
+        <h4>ℹ️ NEFT/RTGS Info</h4>
+        <ul>
+          <li>NEFT processes in batches every 30 minutes</li>
+          <li>RTGS is for amounts above ₹2,00,000 and is near-instant</li>
+          <li>Double-check account number and IFSC before confirming</li>
+          <li>Funds cannot be recalled once transferred</li>
+        </ul>
+      </div>
+    }
+
+    <!-- ── SELF TRANSFER FORM ── -->
+    @if (activeSubSection === 'transfer-self') {
+      @if (accounts.length < 2) {
+        <div class="no-self-card">
+          <div>🏦</div>
+          <h3>Only One Account</h3>
+          <p>You need at least 2 accounts to use Self Transfer.</p>
+        </div>
+      } @else {
+        <div class="transfer-card">
+
+          <div class="form-group">
+            <label>From Account <span class="req">*</span></label>
+            <select class="t-select" [(ngModel)]="selfForm.fromAccount"
+              [class.is-error]="selfErrors.fromAccount">
+              @for (acc of accounts; track acc.accountNumber) {
+                <option [value]="acc.accountNumber">
+                  {{ acc.accountType }} · {{ acc.accountNumber }} · {{ formatAmount(acc.availableBalance) }}
+                </option>
+              }
+            </select>
+            @if (selfErrors.fromAccount) { <span class="err-msg">{{ selfErrors.fromAccount }}</span> }
+          </div>
+
+          <div class="transfer-arrow">↓</div>
+
+          <div class="form-group">
+            <label>To Account <span class="req">*</span></label>
+            <select class="t-select" [(ngModel)]="selfForm.toAccount"
+              [class.is-error]="selfErrors.toAccount">
+              <option value="">Select destination account...</option>
+              @for (acc of toAccounts; track acc.accountNumber) {
+                <option [value]="acc.accountNumber">
+                  {{ acc.accountType }} · {{ acc.accountNumber }} · {{ formatAmount(acc.availableBalance) }}
+                </option>
+              }
+            </select>
+            @if (selfErrors.toAccount) { <span class="err-msg">{{ selfErrors.toAccount }}</span> }
+          </div>
+
+          <div class="form-group">
+            <label>Amount (₹) <span class="req">*</span></label>
+            <div class="amount-wrap">
+              <span class="rupee-sym">₹</span>
+              <input type="number" class="t-input amount-input"
+                [class.is-error]="selfErrors.amount"
+                [(ngModel)]="selfForm.amount"
+                placeholder="0.00" min="1" step="0.01" />
+            </div>
+            @if (selfErrors.amount) { <span class="err-msg">{{ selfErrors.amount }}</span> }
+          </div>
+
+          <!-- Quick Amount Chips -->
+          <div class="quick-amounts">
+            <span class="qa-label">Quick:</span>
+            @for (amt of [500, 1000, 5000, 10000, 25000]; track amt) {
+              <button type="button" class="qa-chip" (click)="selfForm.amount = amt.toString()">
+                ₹{{ amt.toLocaleString() }}
+              </button>
+            }
+          </div>
+
+          <div class="form-group">
+            <label>Note</label>
+            <input type="text" class="t-input"
+              [(ngModel)]="selfForm.description"
+              placeholder="Optional note" maxlength="100" />
+          </div>
+
+          <button class="btn-proceed" (click)="goToConfirm()">
+            Review Transfer →
+          </button>
+        </div>
+      }
+    }
+
+  }
+}
+
+<!-- ══════════════════════════════════════════
+     TRANSACTION HISTORY
+══════════════════════════════════════════ -->
+<!-- @if (activeSubSection === 'transactions') {
+  <div class="section-head">
+    <h1>All Transactions</h1>
+    <p>Your complete transaction history</p>
+  </div>
+
+  @if (txnLoading()) {
+    <div class="t-loading"><div class="spin-ring"></div><p>Loading...</p></div>
+  } @else if (transactions().length === 0) {
+    <div class="empty-txn">
+      <div>📭</div><h3>No Transactions</h3><p>No transactions yet.</p>
+    </div>
+  } @else {
+    <div class="txn-list">
+      @for (txn of transactions(); track txn.id) {
+        <div class="txn-item">
+          <div class="txn-icon-wrap" [class.credit]="isCreditTxn(txn)" [class.debit]="!isCreditTxn(txn)">
+            {{ txnIcon(txn.transactionType) }}
+          </div>
+          <div class="txn-body">
+            <div class="txn-type-row">
+              <span class="txn-type">{{ txn.transactionType }}</span>
+              <span class="txn-ref mono">{{ txn.referenceNumber }}</span>
+            </div>
+            @if (txn.beneficiaryName) { <div class="txn-detail">To: {{ txn.beneficiaryName }}</div> }
+            @if (txn.upiId)           { <div class="txn-detail">UPI: {{ txn.upiId }}</div> }
+            @if (!txn.beneficiaryName && !txn.upiId && txn.toAccountNumber) {
+              <div class="txn-detail">To: {{ txn.toAccountNumber }}</div>
+            }
+            <div class="txn-date">{{ txn.createdAt }}</div>
+          </div>
+          <div class="txn-right">
+            <div class="txn-amount" [class.credit-amt]="isCreditTxn(txn)" [class.debit-amt]="!isCreditTxn(txn)">
+              {{ isCreditTxn(txn) ? '+' : '-' }}{{ formatAmount(txn.amount) }}
+            </div>
+            @if (txn.balanceAfter) {
+              <div class="txn-bal">Bal: {{ formatAmount(txn.balanceAfter) }}</div>
+            }
+            <span class="txn-st" [class]="'ts-' + txn.status.toLowerCase()">{{ txn.status }}</span>
+          </div>
+        </div>
+      }
+    </div>
+
+    @if (totalPages() > 1) {
+      <div class="pagination">
+        <button (click)="goToPage(page() - 1)" [disabled]="page() === 0" class="pg-btn">← Prev</button>
+        @for (p of pageNumbers; track p) {
+          <button class="pg-btn pg-num" [class.pg-active]="p === page()" (click)="goToPage(p)">{{ p + 1 }}</button>
+        }
+        <button (click)="goToPage(page() + 1)" [disabled]="page() >= totalPages() - 1" class="pg-btn">Next →</button>
+      </div>
+    }
+  }
+} -->
+
+
+
+ 
+<!-- ══ ALL TRANSACTIONS ══ -->
+@if (activeSubSection === 'transactions') {
+
+  <div class="section-head">
+    <h1>Transaction History</h1>
+    <p>{{ totalElements() }} total transactions</p>
+  </div>
+
+  <!-- Account Selector + Filters -->
+  <div class="txn-toolbar">
+
+    @if (accounts.length > 1) {
+      <div class="form-group tb-group">
+        <label>Account</label>
+        <select class="tb-select" [(ngModel)]="selectedAccount"
+          (ngModelChange)="onAccountChange()">
+          @for (acc of accounts; track acc.accountNumber) {
+            <option [value]="acc.accountNumber">
+              {{ acc.accountType }} · {{ acc.accountNumber }}
+            </option>
+          }
+        </select>
+      </div>
+    }
+
+    <div class="form-group tb-group">
+      <label>Type</label>
+      <select class="tb-select" [(ngModel)]="txnTypeFilter">
+        <option value="">All Types</option>
+        <option value="DEPOSIT">Deposit</option>
+        <option value="WITHDRAWAL">Withdrawal</option>
+        <option value="TRANSFER">Transfer</option>
+        <option value="UPI">UPI</option>
+        <option value="NEFT">NEFT</option>
+        <option value="RTGS">RTGS</option>
+      </select>
+    </div>
+
+    <div class="form-group tb-group">
+      <label>Status</label>
+      <select class="tb-select" [(ngModel)]="txnStatusFilter">
+        <option value="">All Status</option>
+        <option value="SUCCESS">Success</option>
+        <option value="PENDING">Pending</option>
+        <option value="FAILED">Failed</option>
+        <option value="REVERSED">Reversed</option>
+      </select>
+    </div>
+
+    <div class="form-group tb-group">
+    <button class="tb-refresh" (click)="loadTransactions()"
+      [disabled]="txnLoading()" title="Refresh">↺</button>
+      </div>
+  </div>
+
+  <!-- Error -->
+  @if (txnError()) {
+    <div class="t-alert t-err">{{ txnError() }}<button (click)="txnError.set('')">✕</button></div>
+  }
+
+  <!-- Loading -->
+  @if (txnLoading()) {
+    <div class="t-loading"><div class="spin-ring"></div><p>Loading transactions...</p></div>
+  }
+
+  <!-- Empty -->
+  @else if (!txnLoading() && filteredTransactions.length === 0) {
+    <div class="empty-txn">
+      <div>📭</div>
+      <h3>No Transactions</h3>
+      <p>
+        @if (txnTypeFilter || txnStatusFilter) {
+          No transactions match the selected filters.
+        } @else {
+          No transactions yet for this account.
+        }
+      </p>
+    </div>
+  }
+
+  <!-- List -->
+  @else {
+    <div class="txn-list">
+      @for (txn of filteredTransactions; track txn.id) {
+        <div class="txn-item">
+
+          <!-- Icon -->
+          <div class="txn-icon-wrap"
+            [class.credit]="isCreditTxn(txn)"
+            [class.debit]="!isCreditTxn(txn)">
+            {{ txnIcon(txn.transactionType) }}
+          </div>
+
+          <!-- Body -->
+          <div class="txn-body">
+            <div class="txn-top-row">
+              <span class="txn-type">{{ txn.transactionType }}</span>
+              <span class="txn-ref mono">{{ txn.referenceNumber }}</span>
+            </div>
+
+            <!-- Counterparty info -->
+            @if (isCreditTxn(txn) && txn.fromAccountNumber) {
+              <div class="txn-detail">From: {{ txn.fromAccountNumber }}</div>
+            }
+            @if (!isCreditTxn(txn)) {
+              @if (txn.upiId) {
+                <div class="txn-detail">To UPI: {{ txn.upiId }}</div>
+              } @else if (txn.beneficiaryName) {
+                <div class="txn-detail">To: {{ txn.beneficiaryName }}</div>
+              } @else if (txn.toAccountNumber) {
+                <div class="txn-detail">To: {{ txn.toAccountNumber }}</div>
+              }
+            }
+
+            @if (txn.description) {
+              <div class="txn-note">{{ txn.description }}</div>
+            }
+
+            <div class="txn-date">{{ txn.createdAt }}</div>
+          </div>
+
+          <!-- Amount + Status -->
+          <div class="txn-right">
+            <div class="txn-amount"
+              [class.credit-amt]="isCreditTxn(txn)"
+              [class.debit-amt]="!isCreditTxn(txn)">
+              {{ isCreditTxn(txn) ? '+' : '−' }}{{ formatAmount(txn.amount) }}
+            </div>
+            @if (txn.balanceAfter) {
+              <div class="txn-bal">Bal: {{ formatAmount(txn.balanceAfter) }}</div>
+            }
+            <span class="txn-st" [class]="'ts-' + txn.status.toLowerCase()">
+              {{ txn.status }}
+            </span>
+          </div>
+
+        </div>
+      }
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages() > 1) {
+      <div class="pagination">
+        <button class="pg-btn"
+          (click)="goToPage(0)"
+          [disabled]="page() === 0"
+          title="First">«</button>
+
+        <button class="pg-btn"
+          (click)="goToPage(page() - 1)"
+          [disabled]="page() === 0">← Prev</button>
+
+        @for (p of pageNumbers; track p) {
+          <button class="pg-btn pg-num"
+            [class.pg-active]="p === page()"
+            (click)="goToPage(p)">{{ p + 1 }}</button>
+        }
+
+        <button class="pg-btn"
+          (click)="goToPage(page() + 1)"
+          [disabled]="page() >= totalPages() - 1">Next →</button>
+
+        <button class="pg-btn"
+          (click)="goToPage(totalPages() - 1)"
+          [disabled]="page() >= totalPages() - 1"
+          title="Last">»</button>
+      </div>
+    }
+
+    <!-- Summary row -->
+    <div class="txn-summary">
+      Showing {{ filteredTransactions.length }} of {{ totalElements() }} transactions
+      · Page {{ page() + 1 }} of {{ totalPages() }}
+    </div>
+  }
+}

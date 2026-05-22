@@ -1,0 +1,126 @@
+<!------- admin-user.component.html ------->
+
+@if (error())   { <div class="u-alert u-err">{{ error() }}<button (click)="error.set('')">✕</button></div> }
+@if (success()) { <div class="u-alert u-ok">{{ success() }}<button (click)="success.set('')">✕</button></div> }
+
+<div class="section-head">
+  <div>
+    <h1>{{ sectionTitle }}</h1>
+    <p>{{ totalElements() }} total users</p>
+  </div>
+  <div class="head-actions">
+    <div class="search-box">
+      <span>🔍</span>
+      <input type="text" [(ngModel)]="searchQuery" placeholder="Search name, email, phone..." class="search-input" />
+    </div>
+    <button class="refresh-btn" (click)="loadUsers()" [disabled]="loading()">↺</button>
+  </div>
+</div>
+
+<div class="table-wrap">
+  @if (loading() && users().length === 0) {
+    <div class="t-loading"><div class="spin-ring"></div><p>Loading users...</p></div>
+  } @else if (filteredUsers.length === 0) {
+    <div class="empty-state">
+      <div>👥</div><h3>No Users Found</h3>
+      <p>{{ searchQuery ? 'Try different search.' : 'No users in this category.' }}</p>
+    </div>
+  } @else {
+    <table class="u-table">
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Account No</th>
+          <th>Joined</th>
+          <th>Last Login</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (u of filteredUsers; track u.id) {
+          <tr class="t-row">
+            <td>
+              <div class="user-cell">
+                <div class="u-avatar">{{ (u.fullName || u.username)?.[0]?.toUpperCase() }}</div>
+                <div>
+                  <div class="u-name">{{ u.fullName || u.username }}</div>
+                  <div class="u-email">{{ u.email }}</div>
+                  <div class="u-phone">{{ u.phone || '—' }}</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="role-badge" [class]="getRoleBadgeClass(u.role)">{{ u.role }}</span></td>
+            <td><span class="st-badge" [class]="getStatusClass(u.status)">{{ u.status }}</span></td>
+            <td class="mono">{{ u.accountNumber || '—' }}</td>
+            <td class="date-cell">{{ u.createdAt }}</td>
+            <td class="date-cell">{{ u.lastLoginAt || 'Never' }}</td>
+            <td>
+              <div class="row-actions">
+                <button class="act-btn act-view" (click)="openModal(u)">⚙ Manage</button>
+                @if (u.status === 'LOCKED') {
+                  <button class="act-btn act-unlock" (click)="unlockUser(u)">🔓 Unlock</button>
+                }
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    @if (totalPages() > 1) {
+      <div class="pagination">
+        <button class="pg-btn" (click)="goToPage(page() - 1)" [disabled]="page() === 0">← Prev</button>
+        @for (p of pageNumbers; track p) {
+          <button class="pg-btn pg-num" [class.pg-active]="p === page()" (click)="goToPage(p)">{{ p + 1 }}</button>
+        }
+        <button class="pg-btn" (click)="goToPage(page() + 1)" [disabled]="page() >= totalPages() - 1">Next →</button>
+      </div>
+    }
+  }
+</div>
+
+<!-- Manage Modal -->
+@if (showModal() && selectedUser()) {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-hdr">
+        <h3>Manage User</h3>
+        <button class="modal-close" (click)="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="user-detail-card">
+          <div class="udc-avatar">{{ (selectedUser().fullName || selectedUser().username)?.[0]?.toUpperCase() }}</div>
+          <div>
+            <div class="udc-name">{{ selectedUser().fullName || selectedUser().username }}</div>
+            <div class="udc-email">{{ selectedUser().email }}</div>
+            <span class="role-badge" [class]="getRoleBadgeClass(selectedUser().role)">{{ selectedUser().role }}</span>
+          </div>
+        </div>
+
+        @if (error()) { <div class="u-alert u-err" style="margin:12px 0">{{ error() }}</div> }
+
+        <div class="form-group">
+          <label>Change Status</label>
+          <select class="m-select" [(ngModel)]="newStatus">
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="INACTIVE">INACTIVE</option>
+            <option value="SUSPENDED">SUSPENDED</option>
+            <option value="LOCKED">LOCKED</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Reason</label>
+          <input type="text" class="m-input" [(ngModel)]="statusReason" placeholder="Optional reason" />
+        </div>
+      </div>
+      <div class="modal-ftr">
+        <button class="m-btn-outline" (click)="closeModal()" [disabled]="actionLoading()">Cancel</button>
+        <button class="m-btn-primary" (click)="updateUserStatus()" [disabled]="actionLoading()">
+          @if (actionLoading()) { <span class="spinner"></span> } Update Status
+        </button>
+      </div>
+    </div>
+  </div>
+}

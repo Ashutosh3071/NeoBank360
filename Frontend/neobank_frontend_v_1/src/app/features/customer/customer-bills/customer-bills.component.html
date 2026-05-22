@@ -1,0 +1,129 @@
+<!------- customer-bills.component.html ------->
+
+@if (error())   { <div class="b-alert b-err">{{ error() }}<button (click)="error.set('')">✕</button></div> }
+@if (success()) { <div class="b-alert b-ok">{{ success() }}<button (click)="success.set('')">✕</button></div> }
+
+<div class="section-head">
+  <div>
+    <h1>📄 Bill Manager</h1>
+    <p>Track and pay your upcoming bills</p>
+  </div>
+  <button class="add-bill-btn" (click)="showCreate.update(v => !v)">
+    {{ showCreate() ? '✕ Cancel' : '+ Add Bill' }}
+  </button>
+</div>
+
+<!-- Stats Row -->
+<div class="bill-stats">
+  <div class="bs-card bs-pending">
+    <div class="bsc-val">{{ pendingCount }}</div>
+    <div class="bsc-lbl">Pending</div>
+  </div>
+  <div class="bs-card bs-remind">
+    <div class="bsc-val">{{ reminderCount }}</div>
+    <div class="bsc-lbl">Due Soon 🔔</div>
+  </div>
+  <div class="bs-card bs-overdue">
+    <div class="bsc-val">{{ overdueCount }}</div>
+    <div class="bsc-lbl">Overdue</div>
+  </div>
+</div>
+
+<!-- Create Bill Form -->
+@if (showCreate()) {
+  <div class="create-card">
+    <h4>Add New Bill</h4>
+    @if (createError()) { <div class="b-alert b-err">{{ createError() }}</div> }
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Biller Name <span class="req">*</span></label>
+        <input type="text" class="b-input" [(ngModel)]="billerName"
+          placeholder="e.g. Electricity Board" />
+      </div>
+      <div class="form-group">
+        <label>Amount (₹) <span class="req">*</span></label>
+        <input type="number" class="b-input" [(ngModel)]="amount"
+          placeholder="0.00" min="1" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Due Date <span class="req">*</span></label>
+        <input type="date" class="b-input" [(ngModel)]="dueDate"
+          [min]="'' | date:'yyyy-MM-dd'" />
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <input type="text" class="b-input" [(ngModel)]="description"
+          placeholder="Optional note" />
+      </div>
+    </div>
+
+    <button class="b-btn-primary" (click)="createBill()" [disabled]="createLoading()">
+      @if (createLoading()) { <span class="spinner"></span> } Add Bill
+    </button>
+  </div>
+}
+
+<!-- Filter Tabs -->
+<div class="filter-tabs">
+  @for (f of ['ALL','PENDING','PAID','OVERDUE']; track f) {
+    <button class="ft-btn" [class.ft-active]="statusFilter === f"
+      (click)="statusFilter = f">
+      {{ f === 'ALL' ? 'All' : f }}
+    </button>
+  }
+</div>
+
+<!-- Bills List -->
+@if (loading()) {
+  <div class="b-loading"><div class="spin-ring"></div></div>
+} @else if (filteredBills.length === 0) {
+  <div class="empty-bills">
+    <div>📄</div>
+    <h3>No Bills Found</h3>
+    <p>{{ statusFilter === 'ALL' ? 'Add your first bill above.' : 'No ' + statusFilter.toLowerCase() + ' bills.' }}</p>
+  </div>
+} @else {
+  <div class="bills-list">
+    @for (bill of filteredBills; track bill.id) {
+      <div class="bill-card" [class.bill-overdue-card]="bill.status === 'OVERDUE'"
+        [class.bill-paid-card]="bill.status === 'PAID'"
+        [class.bill-remind-card]="bill.remindMe && bill.status === 'PENDING'">
+
+        <div class="bc-left">
+          <div class="bc-icon">
+            {{ bill.status === 'PAID' ? '✅' : bill.status === 'OVERDUE' ? '❌' : bill.remindMe ? '🔔' : '📄' }}
+          </div>
+          <div class="bc-info">
+            <div class="bc-name">{{ bill.billerName }}</div>
+            @if (bill.description) { <div class="bc-desc">{{ bill.description }}</div> }
+            <div class="bc-due">
+              Due: {{ bill.dueDate }}
+              @if (bill.remindMe && bill.status === 'PENDING') {
+                <span class="remind-badge">Due Soon!</span>
+              }
+              @if (bill.paidAt) { <span class="paid-at">Paid: {{ bill.paidAt }}</span> }
+            </div>
+          </div>
+        </div>
+
+        <div class="bc-right">
+          <div class="bc-amount">{{ formatAmount(bill.amount) }}</div>
+          <span class="st-badge" [class]="getStatusClass(bill.status)">{{ bill.status }}</span>
+          <div class="bc-actions">
+            @if (bill.status === 'PENDING') {
+              <button class="ba-btn ba-pay" (click)="markAsPaid(bill)">✓ Pay</button>
+              <button class="ba-btn ba-del" (click)="deleteBill(bill)">🗑</button>
+            }
+            @if (bill.status === 'PAID') {
+              <button class="ba-btn ba-del" (click)="deleteBill(bill)">🗑</button>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+}

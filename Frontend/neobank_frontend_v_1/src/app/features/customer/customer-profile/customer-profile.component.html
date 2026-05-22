@@ -1,0 +1,97 @@
+<!------- customer-profile.component.html ------->
+
+@if (error())   { <div class="p-alert p-err">{{ error() }}<button (click)="error.set('')">✕</button></div> }
+@if (success()) { <div class="p-alert p-ok">{{ success() }}<button (click)="success.set('')">✕</button></div> }
+
+<!-- ── MY DETAILS ── -->
+@if (activeSubSection === 'profile-details') {
+  <div class="section-head">
+    <h1>My Profile</h1>
+    <p>Your personal information</p>
+  </div>
+
+  <div class="profile-hero">
+    <div class="profile-avatar">
+      {{ user?.fullName?.[0] || user?.username?.[0] | uppercase }}
+    </div>
+    <div>
+      <h2>{{ user?.fullName || user?.username }}</h2>
+      <p class="p-email">{{ user?.email }}</p>
+      <span class="p-badge">{{ user?.role }}</span>
+    </div>
+  </div>
+
+  <div class="info-sections">
+    <div class="info-section">
+      <h3>Account Information</h3>
+      <div class="info-grid">
+        <div class="info-item"><span>Username</span><strong>{{ user?.username }}</strong></div>
+        <div class="info-item"><span>Email</span><strong>{{ user?.email }}</strong></div>
+        <div class="info-item"><span>Full Name</span><strong>{{ user?.fullName || '—' }}</strong></div>
+        <div class="info-item"><span>Role</span><strong>{{ user?.role }}</strong></div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ── CHANGE PASSWORD ── -->
+@if (activeSubSection === 'profile-password') {
+  <div class="section-head">
+    <h1>Change Password</h1>
+    <p>Update your login password securely</p>
+  </div>
+
+  <div class="pw-card">
+    <div class="pw-icon">🔒</div>
+    <h3>Set New Password</h3>
+    <p class="pw-sub">Enter your current password first, then set a new one.</p>
+
+    <div class="form-group">
+      <label>Current Password <span class="req">*</span></label>
+      <div class="pw-wrap">
+        <input [type]="showCurrent() ? 'text' : 'password'" class="pw-input"
+          [(ngModel)]="currentPassword" placeholder="Enter current password" />
+        <button type="button" class="pw-toggle" (click)="showCurrent.update(v => !v)">
+          {{ showCurrent() ? 'Hide' : 'Show' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>New Password <span class="req">*</span></label>
+      <div class="pw-wrap">
+        <input [type]="showNew() ? 'text' : 'password'" class="pw-input"
+          [(ngModel)]="newPassword" placeholder="Minimum 6 characters" />
+        <button type="button" class="pw-toggle" (click)="showNew.update(v => !v)">
+          {{ showNew() ? 'Hide' : 'Show' }}
+        </button>
+      </div>
+      @if (newPassword.length > 0) {
+        <div class="str-wrap">
+          <div class="str-bar"><div class="str-fill" [class]="getPasswordStrength(newPassword).cls" [style.width.%]="getPasswordStrength(newPassword).width"></div></div>
+          <span class="str-lbl" [class]="getPasswordStrength(newPassword).cls">{{ getPasswordStrength(newPassword).label }}</span>
+        </div>
+      }
+    </div>
+
+    <div class="form-group">
+      <label>Confirm New Password <span class="req">*</span></label>
+      <div class="pw-wrap">
+        <input [type]="showConfirm() ? 'text' : 'password'" class="pw-input"
+          [class.is-ok]="confirmPassword && newPassword === confirmPassword"
+          [(ngModel)]="confirmPassword" placeholder="Re-enter new password" />
+        <button type="button" class="pw-toggle" (click)="showConfirm.update(v => !v)">
+          {{ showConfirm() ? 'Hide' : 'Show' }}
+        </button>
+      </div>
+      @if (confirmPassword && newPassword === confirmPassword) {
+        <span class="hint-ok">✓ Passwords match</span>
+      }
+    </div>
+
+    <button class="btn-change-pw" (click)="changePassword()" [disabled]="loading()">
+      @if (loading()) { <span class="mini-spin"></span> Changing... }
+      @else { 🔒 Change Password }
+    </button>
+  </div>
+}

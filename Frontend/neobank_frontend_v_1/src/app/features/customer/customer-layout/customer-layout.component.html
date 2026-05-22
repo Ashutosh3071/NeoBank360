@@ -1,0 +1,282 @@
+<!------- customer-layout.component.html ------->
+<div class="shell" [class.dark]="isDarkMode()">
+
+  <!-- ── Mobile Overlay ── -->
+  @if (isMobile() && sidebarOpen()) {
+    <div class="overlay" (click)="closeSidebar()"></div>
+  }
+
+  <!-- ══ SIDEBAR ══ -->
+  <app-customer-sidebar
+    [sidebarOpen]="sidebarOpen()"
+    [sidebarCollapsed]="sidebarCollapsed()"
+    [currentSection]="currentSection()"
+    [username]="user()?.username || ''"
+    [fullName]="user()?.fullName || ''"
+    [accountNumber]="user()?.accountNumber || ''"
+    [hasAccount]="hasAccount()"
+    [isDarkMode]="isDarkMode()"
+    (sectionSelected)="onSectionSelected($event)"
+    (openSidebarCollapsed)="toggleSidebarOpenCollapsed()"
+    (closeSidebarEvt)="closeSidebar()"
+    (logoutEvt)="logout()"
+  ></app-customer-sidebar>
+
+  <!-- ══ MAIN AREA ══ -->
+  <div class="main" [class.main-collapsed]="sidebarCollapsed() && !isMobile()">
+
+    <!-- ── HEADER ── -->
+    <app-customer-header
+      [username]="user()?.username || ''"
+      [fullName]="user()?.fullName || ''"
+      [pageTitle]="getPageTitle()"
+      [isDarkMode]="isDarkMode()"
+      (toggleSidebarEvt)="toggleSidebar()"
+      (cycleThemeEvt)="cycleTheme()"
+      (logoutEvt)="logout()"
+      (profileEvt)="goToProfile()"
+    ></app-customer-header>
+
+    <!-- ── ALERTS ── -->
+    @if (error()) {
+      <div class="page-alert err">
+        <span>{{ error() }}</span>
+        <button (click)="error.set('')">✕</button>
+      </div>
+    }
+
+    @if (success()) {
+      <div class="page-alert ok">
+        <span>{{ success() }}</span>
+        <button (click)="success.set('')">✕</button>
+      </div>
+    }
+
+    <!-- ══ CONTENT ══ -->
+    <main class="content">
+
+      <!-- ── ACCOUNTS LOADING ── -->
+      @if (accountsLoading()) {
+        <div class="loading-wrap">
+          <div class="spin-ring"></div>
+          <p>Loading your account...</p>
+        </div>
+      }
+
+      <!-- ── NO ACCOUNT SCREEN ── -->
+      @if (!accountsLoading() && !hasAccount() && !['apply-account', 'application-status'].includes(currentSection())) {
+        <div class="no-account-screen">
+          <div class="na-icon">🏦</div>
+          <h2>No Bank Account Yet</h2>
+          <p>Apply for a NeoBank account to access all banking features.</p>
+          <div class="na-actions">
+            <button class="btn-primary-lg" (click)="onSectionSelected('apply-account')">
+              + Open Bank Account
+            </button>
+            <button class="btn-outline-lg" (click)="onSectionSelected('application-status')">
+              🔍 Check Application Status
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- ── NO-ACCOUNT SECTIONS (accessible without an account) ── -->
+      @if (currentSection() === 'apply-account') {
+        <app-customer-apply-account
+          [user]="user()"
+          (applicationSubmitted)="onApplicationSubmitted()"
+        ></app-customer-apply-account>
+      }
+
+      @if (currentSection() === 'application-status') {
+        <app-customer-application-status
+          [user]="user()"
+        ></app-customer-application-status>
+      }
+
+      <!-- ── PROFILE (accessible regardless of account) ── -->
+      @if (currentSection().startsWith('profile')) {
+        <app-customer-profile
+          [activeSubSection]="currentSection()"
+          [user]="user()"
+          (profileUpdated)="loadUser()"
+        ></app-customer-profile>
+      }
+
+      <!-- ══ ACCOUNT-GATED SECTIONS ══ -->
+
+      <!-- ── OVERVIEW ── -->
+      @if (currentSection() === 'overview' && hasAccount()) {
+        <div class="section-head">
+          <h1>Welcome back, {{ user()?.fullName || user()?.username }}! 👋</h1>
+          <p>Here's your financial snapshot</p>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card stat-blue">
+            <div class="stat-icon">💳</div>
+            <div>
+              <div class="stat-val">
+                ₹{{ accounts().length > 0 ? accounts()[0].availableBalance : '0.00' }}
+              </div>
+              <div class="stat-lbl">Available Balance</div>
+            </div>
+          </div>
+          <div class="stat-card stat-green">
+            <div class="stat-icon">🏦</div>
+            <div>
+              <div class="stat-val">{{ accounts().length }}</div>
+              <div class="stat-lbl">Active Accounts</div>
+            </div>
+          </div>
+          <div class="stat-card stat-purple">
+            <div class="stat-icon">💹</div>
+            <div>
+              <div class="stat-val">
+                {{ accounts().length > 0 ? accounts()[0].interestRate + '%' : '0%' }}
+              </div>
+              <div class="stat-lbl">Interest Rate</div>
+            </div>
+          </div>
+          <div class="stat-card stat-red">
+            <div class="stat-icon">📋</div>
+            <div>
+              <div class="stat-val">
+                {{ accounts().length > 0 ? accounts()[0].accountType : '—' }}
+              </div>
+              <div class="stat-lbl">Account Type</div>
+            </div>
+          </div>
+        </div>
+
+        @if (accounts().length > 0) {
+          <div class="account-cards-row">
+            @for (acc of accounts(); track acc.accountNumber) {
+              <div class="acc-mini-card">
+                <div class="amc-header">
+                  <span class="amc-type">{{ acc.accountType }}</span>
+                  <span class="amc-status" [class]="'amc-' + acc.status.toLowerCase()">
+                    {{ acc.status }}
+                  </span>
+                </div>
+                <div class="amc-number">{{ acc.accountNumber }}</div>
+                <div class="amc-balance">₹{{ acc.availableBalance }}</div>
+                <div class="amc-ifsc">IFSC: {{ acc.ifscCode }}</div>
+                <button class="amc-btn" (click)="onSectionSelected('accounts-summary')">
+                  View Details →
+                </button>
+              </div>
+            }
+          </div>
+        }
+
+        <div class="quick-section">
+          <h3>Quick Actions</h3>
+          <div class="quick-grid">
+            <button class="quick-btn" (click)="onSectionSelected('transfer-upi')">
+              <span class="quick-icon">📱</span>
+              <span>UPI Pay</span>
+            </button>
+            <button class="quick-btn" (click)="onSectionSelected('transfer-neft')">
+              <span class="quick-icon">🔄</span>
+              <span>NEFT</span>
+            </button>
+            <button class="quick-btn" (click)="onSectionSelected('accounts-statements')">
+              <span class="quick-icon">📄</span>
+              <span>Statement</span>
+            </button>
+            <button class="quick-btn" (click)="onSectionSelected('transfer-self')">
+              <span class="quick-icon">↔️</span>
+              <span>Self Transfer</span>
+            </button>
+            <button class="quick-btn" (click)="onSectionSelected('transactions')">
+              <span class="quick-icon">📋</span>
+              <span>Transactions</span>
+            </button>
+            <button class="quick-btn" (click)="onSectionSelected('profile-details')">
+              <span class="quick-icon">👤</span>
+              <span>Profile</span>
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- ── ACCOUNTS ── -->
+      @if (currentSection().startsWith('accounts') && hasAccount()) {
+        <app-customer-account
+          [activeSubSection]="currentSection()"
+          [accounts]="accounts()"
+        ></app-customer-account>
+      }
+
+      <!-- ── OPEN ACCOUNT ── -->
+      @if (currentSection() === 'open-account' && hasAccount()) {
+        <app-customer-open-account [user]="user()"></app-customer-open-account>
+      }
+
+      <!-- ── UPI ── -->
+      @if (currentSection() === 'upi' && hasAccount()) {
+        <app-customer-upi [accounts]="accounts()"></app-customer-upi>
+      }
+
+      <!-- ── TRANSFER / TRANSACTIONS ── -->
+      @if ((currentSection().startsWith('transfer') || currentSection() === 'transactions') && hasAccount()) {
+        <app-customer-transaction
+          [activeSubSection]="currentSection()"
+          [accounts]="accounts()"
+        ></app-customer-transaction>
+      }
+
+      <!-- ── BUDGET ── -->
+      @if (currentSection() === 'budget' && hasAccount()) {
+        <app-customer-budget [user]="user()"></app-customer-budget>
+      }
+
+      <!-- ── BILLS ── -->
+      @if (currentSection() === 'bills' && hasAccount()) {
+        <app-customer-bills></app-customer-bills>
+      }
+
+      <!-- ── REWARDS ── -->
+      @if (currentSection() === 'rewards' && hasAccount()) {
+        <app-customer-rewards></app-customer-rewards>
+      }
+
+      <!-- ── PLACEHOLDER (unbuilt sections only) ── -->
+      @if (
+        hasAccount() &&
+        !accountsLoading() &&
+        currentSection() !== 'overview' &&
+        currentSection() !== 'apply-account' &&
+        currentSection() !== 'application-status' &&
+        currentSection() !== 'open-account' &&
+        currentSection() !== 'upi' &&
+        currentSection() !== 'budget' &&
+        currentSection() !== 'bills' &&
+        currentSection() !== 'rewards' &&
+        currentSection() !== 'transactions' &&
+        !currentSection().startsWith('accounts') &&
+        !currentSection().startsWith('transfer') &&
+        !currentSection().startsWith('profile')
+      ) {
+        <div class="section-head">
+          <h1>{{ getPageTitle() }}</h1>
+          <p>This section is coming soon</p>
+        </div>
+        <div class="placeholder">
+          <div class="ph-icon">🔧</div>
+          <h3>{{ getPageTitle() }}</h3>
+          <p>Add your component here.</p>
+        </div>
+      }
+
+    </main>
+
+    <!-- ── FOOTER ── -->
+    <footer class="page-footer">
+      <span>© 2026 NeoBank — Secure Banking</span>
+      <span>v1.0.0</span>
+    </footer>
+
+  </div>
+</div>

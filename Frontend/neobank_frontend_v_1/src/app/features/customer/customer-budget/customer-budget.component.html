@@ -1,0 +1,222 @@
+<!------- customer-budget.component.html ------->
+
+@if (error())   { <div class="b-alert b-err">{{ error() }}<button (click)="error.set('')">✕</button></div> }
+@if (success()) { <div class="b-alert b-ok">{{ success() }}<button (click)="success.set('')">✕</button></div> }
+
+<!-- Header -->
+<div class="section-head">
+  <h1>💰 Budget Planner</h1>
+  <p>Track your monthly spending against your budget goals</p>
+</div>
+
+<!-- Tabs -->
+<div class="b-tabs">
+  <button class="b-tab" [class.b-tab-active]="activeTab() === 'dashboard'"
+    (click)="activeTab.set('dashboard'); loadSummary()">
+    📊 Dashboard
+  </button>
+  <button class="b-tab" [class.b-tab-active]="activeTab() === 'create'"
+    (click)="activeTab.set('create')">
+    + Create Budget
+  </button>
+  <button class="b-tab" [class.b-tab-active]="activeTab() === 'list'"
+    (click)="activeTab.set('list'); loadBudgets()">
+    📋 My Budgets
+  </button>
+</div>
+
+<!-- ══ DASHBOARD ══ -->
+@if (activeTab() === 'dashboard') {
+
+  <!-- Month Selector -->
+  <div class="month-row">
+    <label>Month:</label>
+    <select class="month-select" [(ngModel)]="selectedMonth" (change)="onMonthChange()">
+      @for (m of monthOptions; track m.value) {
+        <option [value]="m.value">{{ m.label }}</option>
+      }
+    </select>
+  </div>
+
+  @if (summaryLoad()) {
+    <div class="b-loading"><div class="spin-ring"></div><p>Loading budget data...</p></div>
+  } @else if (!summary() || !summary().categories?.length) {
+    <div class="empty-budget">
+      <div class="eb-icon">💰</div>
+      <h3>No Budgets for {{ selectedMonth }}</h3>
+      <p>Create budgets to start tracking your spending.</p>
+      <button class="b-btn-primary" (click)="activeTab.set('create')">
+        + Create Budget
+      </button>
+    </div>
+  } @else {
+    <!-- Overall Summary -->
+    <div class="overall-card">
+      <div class="oc-item">
+        <div class="oc-label">Total Budget</div>
+        <div class="oc-val">{{ formatAmount(summary().totalLimit) }}</div>
+      </div>
+      <div class="oc-item">
+        <div class="oc-label">Total Spent</div>
+        <div class="oc-val oc-spent">{{ formatAmount(summary().totalSpent) }}</div>
+      </div>
+      <div class="oc-item">
+        <div class="oc-label">Overall Used</div>
+        <div class="oc-val">{{ summary().overallUtilization }}%</div>
+      </div>
+    </div>
+
+    <!-- Overall Progress Bar -->
+    <div class="overall-bar-wrap">
+      <div class="overall-bar">
+        <div class="overall-fill"
+          [class]="getStatusClass(
+            summary().overallUtilization >= 100 ? 'EXCEEDED' :
+            summary().overallUtilization >= 75  ? 'WARNING'  : 'SAFE'
+          )"
+          [style.width.%]="getBarWidth(summary().overallUtilization)">
+        </div>
+      </div>
+    </div>
+
+    <!-- Category Cards -->
+    <div class="cat-grid">
+      @for (cat of summary().categories; track cat.category) {
+        <div class="cat-card" [class]="'cat-' + cat.status.toLowerCase()">
+          <div class="cc-header">
+            <div class="cc-icon"
+              [style.background]="getCategoryColor(cat.category) + '20'"
+              [style.color]="getCategoryColor(cat.category)">
+              {{ getCategoryLabel(cat.category).split(' ')[0] }}
+            </div>
+            <div class="cc-name">{{ getCategoryLabel(cat.category).substring(2) }}</div>
+            <span class="cc-status-badge" [class]="'status-' + cat.status.toLowerCase()">
+              {{ cat.status }}
+            </span>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="cc-bar-wrap">
+            <div class="cc-bar">
+              <div class="cc-bar-fill"
+                [class]="getStatusClass(cat.status)"
+                [style.width.%]="getBarWidth(cat.utilizationPercent)">
+              </div>
+            </div>
+            <span class="cc-util">{{ cat.utilizationPercent }}%</span>
+          </div>
+
+          <div class="cc-amounts">
+            <div class="cc-spent">Spent: {{ formatAmount(cat.spentAmount) }}</div>
+            <div class="cc-limit">Limit: {{ formatAmount(cat.limitAmount) }}</div>
+          </div>
+          <div class="cc-remaining">
+            @if (cat.status === 'EXCEEDED') {
+              <span class="rem-exceeded">⚠ Over budget by
+                <!-- {{ formatAmount((parseFloat(cat.spentAmount) - parseFloat(cat.limitAmount)).toString()) }} -->
+                  {{ getRemainingAmount(cat) }}
+              </span>
+            } @else {
+              <span class="rem-ok">Remaining: {{ formatAmount(cat.remainingAmount) }}</span>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+}
+
+<!-- ══ CREATE BUDGET ══ -->
+@if (activeTab() === 'create') {
+  <div class="create-card">
+    <h3>Create Monthly Budget</h3>
+    <p class="create-sub">Set spending limits per category for a month</p>
+
+    @if (createError()) { <div class="b-alert b-err">{{ createError() }}</div> }
+
+    <div class="form-group">
+      <label>Category <span class="req">*</span></label>
+      <div class="cat-selector">
+        @for (cat of categories; track cat.value) {
+          <div class="cat-option"
+            [class.cat-opt-selected]="createCategory === cat.value"
+            [style.border-color]="createCategory === cat.value ? cat.color : ''"
+            (click)="createCategory = cat.value">
+            <span class="cat-opt-icon">{{ cat.label.split(' ')[0] }}</span>
+            <span class="cat-opt-label">{{ cat.label.substring(2) }}</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Month <span class="req">*</span></label>
+        <select class="b-input" [(ngModel)]="createMonth">
+          @for (m of monthOptions; track m.value) {
+            <option [value]="m.value">{{ m.label }}</option>
+          }
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Budget Limit (₹) <span class="req">*</span></label>
+        <div class="amount-wrap">
+          <span class="rupee">₹</span>
+          <input type="number" class="b-input amount-inp"
+            [(ngModel)]="createLimit" placeholder="0.00" min="1" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick limit chips -->
+    <div class="quick-limits">
+      <span class="ql-label">Quick:</span>
+      @for (a of [1000,2000,5000,10000,20000,50000]; track a) {
+        <button type="button" class="ql-chip" (click)="createLimit = a.toString()">
+          ₹{{ a.toLocaleString() }}
+        </button>
+      }
+    </div>
+
+    <button class="b-btn-primary" (click)="createBudget()" [disabled]="createLoading()">
+      @if (createLoading()) { <span class="spinner"></span> } Create Budget
+    </button>
+  </div>
+}
+
+<!-- ══ MY BUDGETS LIST ══ -->
+@if (activeTab() === 'list') {
+  @if (budgetsLoad()) {
+    <div class="b-loading"><div class="spin-ring"></div></div>
+  } @else if (budgets().length === 0) {
+    <div class="empty-budget">
+      <div class="eb-icon">📋</div>
+      <h3>No Budgets Found</h3>
+      <p>Create your first budget to get started.</p>
+    </div>
+  } @else {
+    <div class="budget-list">
+      @for (b of budgets(); track b.id) {
+        <div class="bl-item">
+          <div class="bli-cat">
+            <span class="bli-icon"
+              [style.color]="getCategoryColor(b.category)">
+              {{ getCategoryLabel(b.category).split(' ')[0] }}
+            </span>
+            <div>
+              <div class="bli-name">{{ getCategoryLabel(b.category).substring(2) }}</div>
+              <div class="bli-month">{{ b.budgetMonth }}</div>
+            </div>
+          </div>
+          <div class="bli-right">
+            <div class="bli-limit">{{ formatAmount(b.limitAmount) }}</div>
+            <div class="bli-date">{{ b.createdAt }}</div>
+            <button class="bli-delete" (click)="deleteBudget(b.id, b.category)">
+              🗑
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+}

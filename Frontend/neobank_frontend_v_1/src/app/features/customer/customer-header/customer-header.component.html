@@ -1,0 +1,46 @@
+<!------- customer-header.component.html ------->
+<header class="top-header">
+
+  <div class="header-left">
+    <button class="hamburger" (click)="toggleSidebarEvt.emit()" title="Toggle Sidebar">
+      ☰
+    </button>
+    <div class="breadcrumb">
+      <span class="bc-root">Home</span>
+      <span class="bc-sep">›</span>
+      <span class="bc-current">{{ pageTitle }}</span>
+    </div>
+  </div>
+
+  <div class="header-right">
+
+    <!-- Theme -->
+    <!-- <button class="h-btn" (click)="cycleThemeEvt.emit()" title="Toggle theme">
+      {{ isDarkMode ? '☀️' : '🌙' }}
+    </button> -->
+    <button class="h-btn" (click)="toggleTheme()" title="Toggle theme">
+  {{ themeService.isDark() ? '☀️' : '🌙' }}
+</button>
+
+    <!-- Notifications -->
+    <button class="h-btn notif" title="Notifications">
+      🔔
+      <span class="notif-dot"></span>
+    </button>
+
+    <!-- User info (click → profile) -->
+    <button class="h-user" (click)="profileEvt.emit()" title="View Profile">
+      <div class="h-avatar">{{ getUserInitials() }}</div>
+      <div class="h-info">
+        <div class="h-name">{{ fullName || username }}</div>
+        <div class="h-role">Customer</div>
+      </div>
+    </button>
+
+    <!-- Logout -->
+    <button class="h-btn h-logout" (click)="logoutEvt.emit()" title="Logout">
+      🚪
+    </button>
+
+  </div>
+</header>

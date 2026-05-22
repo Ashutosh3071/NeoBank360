@@ -1,0 +1,73 @@
+<!------- admin-sidebar.component.html ------->
+<aside
+  class="sidebar"
+  [class.sidebar-open]="sidebarOpen"
+  [class.sidebar-collapsed]="sidebarCollapsed"
+>
+
+  <!-- Logo -->
+  <div class="sidebar-logo">
+    <div class="logo-icon">N</div>
+    <span class="logo-text">NeoBank Admin</span>
+    <button class="close-btn" (click)="close()">✕</button>
+  </div>
+
+  <!-- Nav -->
+  <nav class="sidebar-nav">
+    @for (item of navItems; track item.id) {
+      <div class="nav-group">
+
+        <button
+          class="nav-item"
+          [class.nav-active]="isActive(item.id)"
+          (click)="openSidebarCollapsed.emit();navigate(item);"
+          [title]="sidebarCollapsed ? item.label : ''"
+        >
+          <span class="nav-icon">{{ item.icon }}</span>
+          <span class="nav-label">{{ item.label }}</span>
+          @if ((item.badge ?? 0) > 0) {
+            <span class="nav-badge">{{ item.badge }}</span>
+          }
+          @if (item.children?.length) {
+            <span class="nav-arrow" [class.open]="isExpanded(item.id)">›</span>
+          }
+        </button>
+
+        @if (item.children?.length && isExpanded(item.id)) {
+          <div class="nav-children">
+            @for (child of item.children; track child.id) {
+              <button
+                class="nav-child"
+                [class.nav-active]="currentSection === child.id"
+                (click)="navigate(child)"
+              >
+                <span class="child-icon">{{ child.icon }}</span>
+                <span class="nav-label">{{ child.label }}</span>
+                @if ((child.badge ?? 0) > 0) {
+                  <span class="nav-badge">{{ child.badge }}</span>
+                }
+              </button>
+            }
+          </div>
+        }
+
+      </div>
+    }
+  </nav>
+
+  <!-- User + Logout -->
+  <div class="sidebar-footer">
+    <div class="user-row">
+      <div class="user-avatar">{{ getUserInitials() }}</div>
+      <div class="user-info">
+        <div class="user-name">{{ fullName || username }}</div>
+        <div class="user-role">{{ role }}</div>
+      </div>
+    </div>
+    <button class="logout-btn" (click)="logout()">
+      <span>🚪</span>
+      <span class="nav-label">Logout</span>
+    </button>
+  </div>
+
+</aside>

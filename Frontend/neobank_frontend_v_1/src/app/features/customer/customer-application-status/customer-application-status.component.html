@@ -1,0 +1,161 @@
+<!------- customer-application-status.component.html ------->
+
+<div class="status-wrap">
+
+  <div class="status-header">
+    <h1>🔍 Application Status</h1>
+    <p>Track your bank account application</p>
+  </div>
+
+  <!-- ── STEP 1: Input ── -->
+  @if (statusStep() === 'input') {
+    <div class="status-card">
+      <div class="sc-icon">🔍</div>
+      <h3>Check Your Application</h3>
+      <p class="sc-sub">
+        Enter your <strong>Application ID</strong> or <strong>registered Email</strong>
+        to receive an OTP and view your application status.
+      </p>
+
+      @if (error())   { <div class="st-alert st-err">{{ error() }}</div> }
+      @if (success()) { <div class="st-alert st-ok">{{ success() }}</div> }
+
+      <div class="form-group">
+        <label>Application ID or Email <span class="req">*</span></label>
+        <input type="text" class="st-input"
+          [(ngModel)]="searchQuery"
+          placeholder="NB20260000001 or email@example.com"
+          (keyup.enter)="sendOtp()" />
+      </div>
+
+      <button class="st-btn" (click)="sendOtp()" [disabled]="loading()">
+        @if (loading()) { <span class="spinner"></span> Sending OTP... }
+        @else { Send OTP → }
+      </button>
+    </div>
+  }
+
+  <!-- ── STEP 2: OTP ── -->
+  @if (statusStep() === 'otp') {
+    <div class="status-card">
+      <div class="sc-icon">🔐</div>
+      <h3>Enter OTP</h3>
+      <p class="sc-sub">
+        A 6-digit OTP has been sent to your registered email.<br>
+        <strong>{{ searchQuery }}</strong>
+      </p>
+
+      @if (error())   { <div class="st-alert st-err">{{ error() }}</div> }
+      @if (success()) { <div class="st-alert st-ok">{{ success() }}</div> }
+
+      <div class="form-group">
+        <label>OTP <span class="req">*</span></label>
+        <input type="text" class="st-input st-otp"
+          [(ngModel)]="statusOtp"
+          placeholder="• • • • • •"
+          maxlength="6" inputmode="numeric"
+          (keyup.enter)="verifyOtp()" />
+      </div>
+
+      <button class="st-btn" (click)="verifyOtp()" [disabled]="loading()">
+        @if (loading()) { <span class="spinner"></span> Verifying... }
+        @else { Verify & View Status }
+      </button>
+
+      <div class="st-footer">
+        <button class="link-btn" (click)="goBackToInput()">← Change</button>
+        <span>·</span>
+        @if (resendCooldown() > 0) {
+          <span class="cooldown">Resend in {{ resendCooldown() }}s</span>
+        } @else {
+          <button class="link-btn" (click)="resendOtp()" [disabled]="loading()">Resend OTP</button>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ── STEP 3: Result ── -->
+  @if (statusStep() === 'result' && result()) {
+    <div class="result-wrap">
+
+      <!-- Status Banner -->
+      <div class="status-banner" [class]="getStatusClass(result().status)">
+        <span class="sb-icon">{{ getStatusIcon(result().status) }}</span>
+        <div>
+          <div class="sb-status">{{ result().status }}</div>
+          <div class="sb-msg">{{ getStatusMessage(result().status) }}</div>
+        </div>
+      </div>
+
+      <!-- App ID -->
+      <div class="app-id-badge">
+        <span class="aid-label">Application ID</span>
+        <span class="aid-value">{{ result().applicationId }}</span>
+      </div>
+
+      <!-- Personal Info -->
+      <div class="result-section">
+        <h4 class="rs-title">👤 Personal Information</h4>
+        <div class="result-grid">
+          <div class="rg-item"><span>Account Type</span><strong>{{ result().accountType }}</strong></div>
+          <div class="rg-item"><span>Full Name</span><strong>{{ result().fullName }}</strong></div>
+          <div class="rg-item"><span>Father's Name</span><strong>{{ result().fatherName }}</strong></div>
+          <div class="rg-item"><span>Mother's Name</span><strong>{{ result().motherName }}</strong></div>
+          <div class="rg-item"><span>Date of Birth</span><strong>{{ result().dateOfBirth }}</strong></div>
+          <div class="rg-item"><span>Gender</span><strong>{{ result().gender }}</strong></div>
+          <div class="rg-item"><span>Marital Status</span><strong>{{ result().maritalStatus || '—' }}</strong></div>
+          <div class="rg-item"><span>Nationality</span><strong>{{ result().nationality || '—' }}</strong></div>
+          <div class="rg-item"><span>Occupation</span><strong>{{ result().occupation }}</strong></div>
+          <div class="rg-item"><span>Annual Income</span><strong>{{ result().annualIncome ? '₹' + result().annualIncome : '—' }}</strong></div>
+          <div class="rg-item"><span>Mobile</span><strong>{{ result().phoneNumber }}</strong></div>
+          <div class="rg-item"><span>Email</span><strong>{{ result().emailId }}</strong></div>
+          <div class="rg-item"><span>Aadhaar</span><strong>{{ result().aadhaarNumber }}</strong></div>
+          <div class="rg-item"><span>PAN</span><strong>{{ result().panNumber }}</strong></div>
+        </div>
+      </div>
+
+      <!-- Address -->
+      <div class="result-section">
+        <h4 class="rs-title">🏠 Address</h4>
+        <div class="addr-grid">
+          <div class="addr-block">
+            <div class="addr-lbl">Current</div>
+            <div class="addr-txt">
+              {{ result().currentAddressLine }}<br>
+              {{ result().currentCity }}, {{ result().currentState }} – {{ result().currentPincode }}
+            </div>
+          </div>
+          <div class="addr-block">
+            <div class="addr-lbl">Permanent</div>
+            <div class="addr-txt">
+              {{ result().permanentAddressLine }}<br>
+              {{ result().permanentCity }}, {{ result().permanentState }} – {{ result().permanentPincode }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nominee -->
+      <div class="result-section">
+        <h4 class="rs-title">👨‍👩‍👦 Nominee</h4>
+        <div class="result-grid">
+          <div class="rg-item"><span>Name</span><strong>{{ result().nomineeName }}</strong></div>
+          <div class="rg-item"><span>Relation</span><strong>{{ result().nomineeRelation }}</strong></div>
+          <div class="rg-item"><span>Age</span><strong>{{ result().nomineeAge }}</strong></div>
+          <div class="rg-item"><span>Mobile</span><strong>{{ result().nomineeMobileNumber }}</strong></div>
+          <div class="rg-item full-w"><span>Address</span><strong>{{ result().nomineeAddress }}</strong></div>
+        </div>
+      </div>
+
+      <!-- Submitted On -->
+      <div class="submitted-row">
+        <span>Submitted On</span>
+        <strong>{{ result().submittedOn }}</strong>
+      </div>
+
+      <button class="st-btn-outline" (click)="goBackToInput()">← Check Another</button>
+
+    </div>
+  }
+
+</div>

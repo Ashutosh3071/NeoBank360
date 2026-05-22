@@ -1,0 +1,920 @@
+<!-- -------------------------  register-multi.component.html  ------------------------- -->
+
+<!-- ════════════════════════════════════════════════════════
+     SUCCESS SCREEN
+════════════════════════════════════════════════════════ -->
+@if (showSuccessScreen()) {
+  <div class="auth-page">
+    <div class="auth-container success-container">
+      <div class="success-card">
+        <div class="success-icon-wrap">
+          <div class="success-icon">✓</div>
+        </div>
+        <h2 class="success-title">Application Submitted!</h2>
+        <p class="success-sub">Your bank account application has been received.<br>
+          Our team will verify your documents within 2–3 business days.</p>
+
+        <div class="app-id-badge">
+          <span class="app-id-label">Application ID</span>
+          <span class="app-id-value">{{ applicationId() }}</span>
+        </div>
+
+        <div class="success-details-card">
+          <div class="success-row"><span>Full Name</span><strong>{{ customerDetails.fullName }}</strong></div>
+          <div class="success-row"><span>Account Type</span><strong>{{ customerDetails.accountType }}</strong></div>
+          <div class="success-row"><span>Mobile</span><strong>{{ customerDetails.phoneNumber }}</strong></div>
+          <div class="success-row"><span>Email</span><strong>{{ customerDetails.emailId }}</strong></div>
+          <div class="success-row">
+            <span>Status</span>
+            <span class="status-badge">✓ SUCCESS</span>
+          </div>
+          <div class="success-row">
+            <span>Submitted On</span>
+            <strong>{{ today }}</strong>
+          </div>
+        </div>
+
+        <div class="success-actions">
+          <button class="btn btn-primary" (click)="downloadPDF()">
+            ⬇ Download Application PDF
+          </button>
+          <button class="btn btn-outline" (click)="goToHome()">
+            Go to Home Page
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="auth-visual">
+      <div class="visual-content">
+        <div class="visual-check">✓</div>
+        <h2>Welcome to NeoBank!</h2>
+        <p>Your application is under review. You'll receive an email confirmation shortly.</p>
+        <div class="features-list">
+          <div class="feature"><span class="feature-icon">🔔</span><span>Email confirmation sent</span></div>
+          <div class="feature"><span class="feature-icon">🔍</span><span>Document verification in progress</span></div>
+          <div class="feature"><span class="feature-icon">💳</span><span>Account activation in 2–3 days</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ════════════════════════════════════════════════════════
+     SUCCESS POPUP (after OTP verified + backend success)
+════════════════════════════════════════════════════════ -->
+@if (showSuccessPopup()) {
+  <div class="modal-backdrop">
+    <div class="modal-box success-popup">
+
+      <div class="success-popup-icon">✅</div>
+      <h3>Application Submitted!</h3>
+      <p class="modal-sub">Your bank account application has been received.</p>
+
+      <div class="app-id-badge">
+        <span class="app-id-label">Application ID</span>
+        <span class="app-id-value">{{ applicationResponse()?.applicationId }}</span>
+      </div>
+
+      <div class="success-details-card">
+        <div class="success-row">
+          <span>Full Name</span>
+          <strong>{{ applicationResponse()?.fullName }}</strong>
+        </div>
+        <div class="success-row">
+          <span>Account Type</span>
+          <strong>{{ applicationResponse()?.accountType }}</strong>
+        </div>
+        <div class="success-row">
+          <span>Mobile</span>
+          <strong>{{ applicationResponse()?.phoneNumber }}</strong>
+        </div>
+        <div class="success-row">
+          <span>Email</span>
+          <strong>{{ applicationResponse()?.emailId }}</strong>
+        </div>
+        <div class="success-row">
+          <span>Submitted On</span>
+          <strong>{{ applicationResponse()?.submittedOn }}</strong>
+        </div>
+        <div class="success-row">
+          <span>Status</span>
+          <span class="status-badge">✓ {{ applicationResponse()?.status }}</span>
+        </div>
+      </div>
+
+      <p class="auto-download-note">📥 PDF will auto-download in 3 seconds...</p>
+
+      <div class="modal-actions">
+        <button class="btn btn-primary" (click)="onDownloadAndClose()">
+          ⬇ Download PDF
+        </button>
+        <button class="btn btn-outline" (click)="onCloseSuccessPopup()">
+          Close
+        </button>
+      </div>
+
+    </div>
+  </div>
+}
+<!-- ════════════════════════════════════════════════════════
+     OTP MODAL
+════════════════════════════════════════════════════════ -->
+@if (showOtpModal()) {
+  <div class="modal-backdrop" (click)="closeOtpModal()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-icon">🔐</div>
+      <h3>OTP Verification</h3>
+      <p class="modal-sub">
+        We've sent a 6-digit OTP to<br>
+        <strong>{{ customerDetails.emailId }}</strong><br>
+        <!-- <em class="demo-note">(Demo OTP: {{ generatedOtp }})</em> -->
+      </p>
+
+<!-- Inside OTP modal-box -->
+
+@if (error()) {
+  <div class="alert alert-error">{{ error() }}</div>
+}
+
+@if (successMessage()) {
+  <div class="alert alert-success">{{ successMessage() }}</div>
+}
+
+      <div class="form-group">
+        <label for="otpField">Enter OTP</label>
+        <input
+          type="text"
+          id="otpField"
+          class="form-control otp-input"
+          [class.error]="errors.otp"
+          [(ngModel)]="otp"
+          name="otp"
+          placeholder="• • • • • •"
+          maxlength="6"
+          inputmode="numeric"
+          autocomplete="one-time-code"
+        />
+        @if (errors.otp) {
+          <span class="error-message">{{ errors.otp }}</span>
+        }
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-outline" (click)="closeOtpModal()" [disabled]="loading()">Cancel</button>
+        <button class="btn btn-primary" (click)="onVerifyOtp()" [disabled]="loading()">
+          @if (loading()) { <span class="spinner"></span> } Verify OTP
+        </button>
+      </div>
+
+      <div class="modal-footer-note">
+        OTP valid for 10 minutes ·
+        <button type="button" class="link-btn" (click)="onResendOtp()" [disabled]="loading()">Resend OTP</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ════════════════════════════════════════════════════════
+     MAIN FORM (steps 1–5)
+════════════════════════════════════════════════════════ -->
+@if (!showSuccessScreen()) {
+  <div class="auth-page">
+
+    <!-- LEFT: Form Area -->
+    <div class="auth-container">
+      <div class="auth-card">
+
+        <!-- Brand -->
+        <a routerLink="/home" class="logo">
+          <span class="logo-icon">N</span>
+          <span class="logo-text">NeoBank</span>
+        </a>
+
+        <!-- Header -->
+        <div class="auth-header">
+          <h1>{{ getStepTitle() }}</h1>
+          <p>{{ getStepSubtitle() }}</p>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-track">
+          <div class="progress-fill" [style.width.%]="progressPercent"></div>
+        </div>
+        <div class="progress-label">Step {{ step() }} of {{ totalSteps }}</div>
+
+        <!-- Step Indicators -->
+        <div class="steps">
+          @for (s of stepDefs; track s.n) {
+            <!-- <div class="step" [class.active]="isStepActive(s.n)" [class.completed]="isStepDone(s.n)"> -->
+              <div class="step" 
+     [class.active]="isStepActive(s.n)" 
+     [class.completed]="isStepDone(s.n)"
+     [class.clickable]="isStepDone(s.n)"
+     (click)="goToStep(s.n)">
+              <span class="step-number">
+                @if (isStepDone(s.n)) { ✓ } @else { {{ s.n }} }
+              </span>
+              <span class="step-label">{{ s.label }}</span>
+            </div>
+            @if (s.n < totalSteps) {
+              <div class="step-line" [class.active]="isStepDone(s.n)"></div>
+            }
+          }
+        </div>
+
+        <!-- Global Error -->
+        @if (error()) {
+          <div class="alert alert-error">{{ error() }}</div>
+        }
+
+        <!-- ──────────────────────────────────────────
+             STEP 1: Customer Details
+        ────────────────────────────────────────── -->
+        @if (step() === 1) {
+          <form (ngSubmit)="goNext()" class="auth-form" #step1Form="ngForm">
+
+            <div class="form-section">
+              <h3>Account Type</h3>
+              <div class="form-group">
+                <label for="accountType">Account Type <span class="req">*</span></label>
+                <select
+                  id="accountType"
+                  class="form-control"
+                  [class.error]="errors.accountType"
+                  [(ngModel)]="customerDetails.accountType"
+                  name="accountType"
+                >
+                  <option value="">Select account type...</option>
+                  @for (opt of accountTypes; track opt.value) {
+                    <option [value]="opt.value">{{ opt.label }}</option>
+                  }
+                </select>
+                @if (errors.accountType) { <span class="error-message">{{ errors.accountType }}</span> }
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h3>Personal Details</h3>
+
+              <div class="form-group">
+                <label for="fullName">Full Name (as per Aadhaar) <span class="req">*</span></label>
+                <input type="text" id="fullName" class="form-control" [class.error]="errors.fullName"
+                  [(ngModel)]="customerDetails.fullName" name="fullName" placeholder="Enter full name" />
+                @if (errors.fullName) { <span class="error-message">{{ errors.fullName }}</span> }
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="fatherName">Father's Name <span class="req">*</span></label>
+                  <input type="text" id="fatherName" class="form-control" [class.error]="errors.fatherName"
+                    [(ngModel)]="customerDetails.fatherName" name="fatherName" placeholder="Father's full name" />
+                  @if (errors.fatherName) { <span class="error-message">{{ errors.fatherName }}</span> }
+                </div>
+                <div class="form-group">
+                  <label for="motherName">Mother's Name <span class="req">*</span></label>
+                  <input type="text" id="motherName" class="form-control" [class.error]="errors.motherName"
+                    [(ngModel)]="customerDetails.motherName" name="motherName" placeholder="Mother's full name" />
+                  @if (errors.motherName) { <span class="error-message">{{ errors.motherName }}</span> }
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="dateOfBirth">Date of Birth <span class="req">*</span></label>
+                  <input type="date" id="dateOfBirth" class="form-control" [class.error]="errors.dateOfBirth"
+                    [(ngModel)]="customerDetails.dateOfBirth" name="dateOfBirth" [max]="maxDob" />
+                  @if (errors.dateOfBirth) { <span class="error-message">{{ errors.dateOfBirth }}</span> }
+                </div>
+                <div class="form-group">
+                  <label for="gender">Gender <span class="req">*</span></label>
+                  <select id="gender" class="form-control" [class.error]="errors.gender"
+                    [(ngModel)]="customerDetails.gender" name="gender">
+                    <option value="">Select...</option>
+                    @for (g of genders; track g.value) {
+                      <option [value]="g.value">{{ g.label }}</option>
+                    }
+                  </select>
+                  @if (errors.gender) { <span class="error-message">{{ errors.gender }}</span> }
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="maritalStatus">Marital Status</label>
+                  <select id="maritalStatus" class="form-control"
+                    [(ngModel)]="customerDetails.maritalStatus" name="maritalStatus">
+                    <option value="">Select...</option>
+                    @for (ms of maritalStatuses; track ms.value) {
+                      <option [value]="ms.value">{{ ms.label }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="nationality">Nationality</label>
+                  <input type="text" id="nationality" class="form-control"
+                    [(ngModel)]="customerDetails.nationality" name="nationality" placeholder="e.g. India" />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="occupation">Occupation <span class="req">*</span></label>
+                  <input type="text" id="occupation" class="form-control" [class.error]="errors.occupation"
+                    [(ngModel)]="customerDetails.occupation" name="occupation" placeholder="e.g. Software Engineer" />
+                  @if (errors.occupation) { <span class="error-message">{{ errors.occupation }}</span> }
+                </div>
+                <div class="form-group">
+                  <label for="annualIncome">Annual Income (₹)</label>
+                  <input type="text" id="annualIncome" class="form-control"
+                    [(ngModel)]="customerDetails.annualIncome" name="annualIncome" placeholder="e.g. 600000" />
+                </div>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h3>Contact Information</h3>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="phoneNumber">Mobile Number <span class="req">*</span></label>
+                  <input type="tel" id="phoneNumber" class="form-control" [class.error]="errors.phoneNumber"
+                    [(ngModel)]="customerDetails.phoneNumber" name="phoneNumber"
+                    placeholder="10-digit number" maxlength="10" />
+                  @if (errors.phoneNumber) { <span class="error-message">{{ errors.phoneNumber }}</span> }
+                </div>
+                <div class="form-group">
+                  <label for="emailId">Email Address <span class="req">*</span></label>
+                  <input type="email" id="emailId" class="form-control" [class.error]="errors.emailId"
+                    [(ngModel)]="customerDetails.emailId" name="emailId" placeholder="yourname@email.com" />
+                  @if (errors.emailId) { <span class="error-message">{{ errors.emailId }}</span> }
+                </div>
+              </div>
+            </div>
+
+<div class="form-section">
+              <h3>Identity Numbers</h3>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="aadhaarNumber">Aadhaar Number <span class="req">*</span></label>
+                  <input
+                    type="text"
+                    id="aadhaarNumber"
+                    class="form-control"
+                    [class.error]="errors.aadhaarNumber"
+                    [(ngModel)]="customerDetails.aadhaarNumber"
+                    name="aadhaarNumber"
+                    placeholder="12-digit Aadhaar number"
+                    maxlength="12"
+                    inputmode="numeric"
+                  />
+                  @if (errors.aadhaarNumber) {
+                    <span class="error-message">{{ errors.aadhaarNumber }}</span>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label for="panNumber">PAN Number <span class="req">*</span></label>
+                  <input
+                    type="text"
+                    id="panNumber"
+                    class="form-control"
+                    [class.error]="errors.panNumber"
+                    [(ngModel)]="customerDetails.panNumber"
+                    name="panNumber"
+                    placeholder="e.g. ABCDE1234F"
+                    maxlength="10"
+                    style="text-transform: uppercase"
+                  />
+                  @if (errors.panNumber) {
+                    <span class="error-message">{{ errors.panNumber }}</span>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <div class="form-actions single">
+              <button type="submit" class="btn btn-primary w-full" [disabled]="loading()">
+                @if (loading()) { <span class="spinner"></span> Processing... } @else { Continue → }
+              </button>
+            </div>
+          </form>
+        }
+
+        <!-- ──────────────────────────────────────────
+             STEP 2: Address Details
+        ────────────────────────────────────────── -->
+        @if (step() === 2) {
+          <form (ngSubmit)="goNext()" class="auth-form kyc-form">
+
+            <div class="form-section">
+              <h3>Current Address</h3>
+              <div class="form-group">
+                <label for="currentAddressLine">Address Line <span class="req">*</span></label>
+                <input type="text" id="currentAddressLine" class="form-control" [class.error]="errors.currentAddressLine"
+                  [(ngModel)]="addressDetails.currentAddressLine" name="currentAddressLine"
+                  placeholder="House no., Street, Area, Landmark" />
+                @if (errors.currentAddressLine) { <span class="error-message">{{ errors.currentAddressLine }}</span> }
+              </div>
+              <div class="form-row form-row-3">
+                <div class="form-group">
+                  <label for="currentCity">City <span class="req">*</span></label>
+                  <input type="text" id="currentCity" class="form-control" [class.error]="errors.currentCity"
+                    [(ngModel)]="addressDetails.currentCity" name="currentCity" placeholder="City" />
+                  @if (errors.currentCity) { <span class="error-message">{{ errors.currentCity }}</span> }
+                </div>
+                <div class="form-group">
+                  <label for="currentState">State <span class="req">*</span></label>
+                  <select id="currentState" class="form-control" [class.error]="errors.currentState"
+                    [(ngModel)]="addressDetails.currentState" name="currentState">
+                    <option value="">Select state...</option>
+                    @for (st of indianStates; track st) {
+                      <option [value]="st">{{ st }}</option>
+                    }
+                  </select>
+                  @if (errors.currentState) { <span class="error-message">{{ errors.currentState }}</span> }
+                </div>
+                <div class="form-group">
+                  <label for="currentPincode">Pincode <span class="req">*</span></label>
+                  <input type="text" id="currentPincode" class="form-control" [class.error]="errors.currentPincode"
+                    [(ngModel)]="addressDetails.currentPincode" name="currentPincode"
+                    placeholder="6-digit" maxlength="6" />
+                  @if (errors.currentPincode) { <span class="error-message">{{ errors.currentPincode }}</span> }
+                </div>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h3>Permanent Address</h3>
+              <div class="same-address-check">
+                <label>
+                  <input type="checkbox" [(ngModel)]="addressDetails.sameAsCurrent"
+                    name="sameAsCurrent" (change)="onSameAsCurrentChange()" />
+                  Same as current address
+                </label>
+              </div>
+              <div class="form-group">
+                <label for="permanentAddressLine">Address Line <span class="req">*</span></label>
+                <input type="text" id="permanentAddressLine" class="form-control" [class.error]="errors.permanentAddressLine"
+                  [(ngModel)]="addressDetails.permanentAddressLine" name="permanentAddressLine"
+                  placeholder="House no., Street, Area, Landmark"
+                  [disabled]="addressDetails.sameAsCurrent" />
+                @if (errors.permanentAddressLine) { <span class="error-message">{{ errors.permanentAddressLine }}</span> }
+              </div>
+              <div class="form-row form-row-3">
+                <div class="form-group">
+                  <label for="permanentCity">City <span class="req">*</span></label>
+                  <input type="text" id="permanentCity" class="form-control" [class.error]="errors.permanentCity"
+                    [(ngModel)]="addressDetails.permanentCity" name="permanentCity" placeholder="City"
+                    [disabled]="addressDetails.sameAsCurrent" />
+                  @if (errors.permanentCity) { <span class="error-message">{{ errors.permanentCity }}</span> }
+                </div>
+                <div class="form-group">
+                  <label for="permanentState">State <span class="req">*</span></label>
+                  <select id="permanentState" class="form-control" [class.error]="errors.permanentState"
+                    [(ngModel)]="addressDetails.permanentState" name="permanentState"
+                    [disabled]="addressDetails.sameAsCurrent">
+                    <option value="">Select state...</option>
+                    @for (st of indianStates; track st) {
+                      <option [value]="st">{{ st }}</option>
+                    }
+                  </select>
+                  @if (errors.permanentState) { <span class="error-message">{{ errors.permanentState }}</span> }
+                </div>
+                <div class="form-group">
+                  <label for="permanentPincode">Pincode <span class="req">*</span></label>
+                  <input type="text" id="permanentPincode" class="form-control" [class.error]="errors.permanentPincode"
+                    [(ngModel)]="addressDetails.permanentPincode" name="permanentPincode"
+                    placeholder="6-digit" maxlength="6"
+                    [disabled]="addressDetails.sameAsCurrent" />
+                  @if (errors.permanentPincode) { <span class="error-message">{{ errors.permanentPincode }}</span> }
+                </div>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary" (click)="goBack()" [disabled]="loading()">← Back</button>
+              <button type="submit" class="btn btn-primary" [disabled]="loading()">Continue →</button>
+            </div>
+          </form>
+        }
+
+        <!-- ──────────────────────────────────────────
+             STEP 3: Nominee Details
+        ────────────────────────────────────────── -->
+        @if (step() === 3) {
+          <form (ngSubmit)="goNext()" class="auth-form kyc-form">
+            <div class="form-section">
+              <h3>Nominee / Beneficiary</h3>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="nomineeName">Nominee Full Name <span class="req">*</span></label>
+                  <input type="text" id="nomineeName" class="form-control" [class.error]="errors.nomineeName"
+                    [(ngModel)]="nomineeDetails.nomineeName" name="nomineeName" placeholder="Full legal name" />
+                  @if (errors.nomineeName) { <span class="error-message">{{ errors.nomineeName }}</span> }
+                </div>
+                <div class="form-group">
+                  <label for="nomineeRelation">Relationship <span class="req">*</span></label>
+                  <select id="nomineeRelation" class="form-control" [class.error]="errors.nomineeRelation"
+                    [(ngModel)]="nomineeDetails.nomineeRelation" name="nomineeRelation">
+                    <option value="">Select relation...</option>
+                    @for (r of nomineeRelations; track r.value) {
+                      <option [value]="r.value">{{ r.label }}</option>
+                    }
+                  </select>
+                  @if (errors.nomineeRelation) { <span class="error-message">{{ errors.nomineeRelation }}</span> }
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="nomineeAge">Age <span class="req">*</span></label>
+                  <input type="number" id="nomineeAge" class="form-control" [class.error]="errors.nomineeAge"
+                    [(ngModel)]="nomineeDetails.nomineeAge" name="nomineeAge"
+                    placeholder="Age in years" min="1" max="120" />
+                  @if (errors.nomineeAge) { <span class="error-message">{{ errors.nomineeAge }}</span> }
+                </div>
+                <div class="form-group">
+                  <label for="nomineeMobileNumber">Mobile Number <span class="req">*</span></label>
+                  <input type="tel" id="nomineeMobileNumber" class="form-control" [class.error]="errors.nomineeMobileNumber"
+                    [(ngModel)]="nomineeDetails.nomineeMobileNumber" name="nomineeMobileNumber"
+                    placeholder="10-digit number" maxlength="10" />
+                  @if (errors.nomineeMobileNumber) { <span class="error-message">{{ errors.nomineeMobileNumber }}</span> }
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="nomineeAddress">Nominee Address <span class="req">*</span></label>
+                <textarea id="nomineeAddress" class="form-control" [class.error]="errors.nomineeAddress"
+                  [(ngModel)]="nomineeDetails.nomineeAddress" name="nomineeAddress"
+                  placeholder="Complete address of nominee" rows="3"></textarea>
+                @if (errors.nomineeAddress) { <span class="error-message">{{ errors.nomineeAddress }}</span> }
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary" (click)="goBack()" [disabled]="loading()">← Back</button>
+              <button type="submit" class="btn btn-primary" [disabled]="loading()">Continue →</button>
+            </div>
+          </form>
+        }
+
+        <!-- ──────────────────────────────────────────
+             STEP 4: Document Upload
+        ────────────────────────────────────────── -->
+        @if (step() === 4) {
+          <form (ngSubmit)="goNext()" class="auth-form kyc-form">
+
+            <div class="form-section">
+              <h3>Identity Documents</h3>
+
+              <!-- Aadhaar -->
+              <div class="form-group">
+                <label>Aadhaar Card <span class="req">*</span> <span class="file-hint">(PDF/JPG/PNG, max 5MB)</span></label>
+                <div class="file-upload">
+                  @if (aadhaarCardFileName()) {
+                    <div class="file-selected">
+                      <span class="file-icon">📎</span>
+                      <span>{{ aadhaarCardFileName() }}</span>
+                      <button type="button" class="file-remove" (click)="onRemoveFile('aadhaarCardFile')">×</button>
+                    </div>
+                  } @else {
+                    <label class="file-drop-zone" for="aadhaarCardFile">
+                      <span class="upload-icon">📤</span>
+                      <span class="upload-text">Click to upload Aadhaar Card</span>
+                      <span class="upload-hint">PDF, JPG, PNG · max 5MB</span>
+                      <input type="file" id="aadhaarCardFile"
+                        (change)="onFileSelect($event, 'aadhaarCardFile')"
+                        accept=".pdf,.jpg,.jpeg,.png" />
+                    </label>
+                  }
+                </div>
+                @if (errors.aadhaarCardFile) { <span class="error-message">{{ errors.aadhaarCardFile }}</span> }
+              </div>
+
+              <!-- PAN -->
+              <div class="form-group">
+                <label>PAN Card <span class="req">*</span> <span class="file-hint">(PDF/JPG/PNG, max 5MB)</span></label>
+                <div class="file-upload">
+                  @if (panCardFileName()) {
+                    <div class="file-selected">
+                      <span class="file-icon">📎</span>
+                      <span>{{ panCardFileName() }}</span>
+                      <button type="button" class="file-remove" (click)="onRemoveFile('panCardFile')">×</button>
+                    </div>
+                  } @else {
+                    <label class="file-drop-zone" for="panCardFile">
+                      <span class="upload-icon">📤</span>
+                      <span class="upload-text">Click to upload PAN Card</span>
+                      <span class="upload-hint">PDF, JPG, PNG · max 5MB</span>
+                      <input type="file" id="panCardFile"
+                        (change)="onFileSelect($event, 'panCardFile')"
+                        accept=".pdf,.jpg,.jpeg,.png" />
+                    </label>
+                  }
+                </div>
+                @if (errors.panCardFile) { <span class="error-message">{{ errors.panCardFile }}</span> }
+              </div>
+
+              <!-- Passport (optional) -->
+              <div class="form-group">
+                <label>Passport <span class="optional-label">(Optional)</span></label>
+                <div class="file-upload">
+                  @if (passportFileName()) {
+                    <div class="file-selected">
+                      <span class="file-icon">📎</span>
+                      <span>{{ passportFileName() }}</span>
+                      <button type="button" class="file-remove" (click)="onRemoveFile('passportFile')">×</button>
+                    </div>
+                  } @else {
+                    <label class="file-drop-zone" for="passportFile">
+                      <span class="upload-icon">📤</span>
+                      <span class="upload-text">Click to upload Passport</span>
+                      <span class="upload-hint">PDF, JPG, PNG · max 5MB</span>
+                      <input type="file" id="passportFile"
+                        (change)="onFileSelect($event, 'passportFile')"
+                        accept=".pdf,.jpg,.jpeg,.png" />
+                    </label>
+                  }
+                </div>
+              </div>
+
+              <!-- Voter ID (optional) -->
+              <div class="form-group">
+                <label>Voter ID <span class="optional-label">(Optional)</span></label>
+                <div class="file-upload">
+                  @if (voterIdFileName()) {
+                    <div class="file-selected">
+                      <span class="file-icon">📎</span>
+                      <span>{{ voterIdFileName() }}</span>
+                      <button type="button" class="file-remove" (click)="onRemoveFile('voterIdFile')">×</button>
+                    </div>
+                  } @else {
+                    <label class="file-drop-zone" for="voterIdFile">
+                      <span class="upload-icon">📤</span>
+                      <span class="upload-text">Click to upload Voter ID</span>
+                      <span class="upload-hint">PDF, JPG, PNG · max 5MB</span>
+                      <input type="file" id="voterIdFile"
+                        (change)="onFileSelect($event, 'voterIdFile')"
+                        accept=".pdf,.jpg,.jpeg,.png" />
+                    </label>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h3>Photo & Signature</h3>
+              <!-- <div class="form-row"> -->
+                <!-- Profile Photo -->
+                <div class="form-group">
+                  <label>Profile Photo <span class="req">*</span> <span class="file-hint">(JPG/PNG, max 2MB)</span></label>
+                  <div class="file-upload">
+                    @if (profilePhotoName()) {
+                      <div class="file-selected">
+                        <span class="file-icon">🖼️</span>
+                        <span>{{ profilePhotoName() }}</span>
+                        <button type="button" class="file-remove" (click)="onRemoveFile('profilePhoto')">×</button>
+                      </div>
+                    } @else {
+                      <label class="file-drop-zone" for="profilePhoto">
+                        <span class="upload-icon">🤳</span>
+                        <span class="upload-text">Upload Photo</span>
+                        <span class="upload-hint">JPG, PNG · max 2MB</span>
+                        <input type="file" id="profilePhoto"
+                          (change)="onFileSelect($event, 'profilePhoto', true)"
+                          accept=".jpg,.jpeg,.png" />
+                      </label>
+                    }
+                  </div>
+                  @if (errors.profilePhoto) { <span class="error-message">{{ errors.profilePhoto }}</span> }
+                </div>
+                  
+                <!-- Signature -->
+                <div class="form-group">
+                  <label>Signature Image <span class="req">*</span> <span class="file-hint">(JPG/PNG, max 2MB)</span></label>
+                  <div class="file-upload">
+                    @if (signatureImageName()) {
+                      <div class="file-selected">
+                        <span class="file-icon">✍️</span>
+                        <span>{{ signatureImageName() }}</span>
+                        <button type="button" class="file-remove" (click)="onRemoveFile('signatureImage')">×</button>
+                      </div>
+                    } @else {
+                      <label class="file-drop-zone" for="signatureImage">
+                        <span class="upload-icon">✍️</span>
+                        <span class="upload-text">Upload Signature</span>
+                        <span class="upload-hint">JPG, PNG · max 2MB</span>
+                        <input type="file" id="signatureImage"
+                          (change)="onFileSelect($event, 'signatureImage', true)"
+                          accept=".jpg,.jpeg,.png" />
+                      </label>
+                    }
+                  </div>
+                  @if (errors.signatureImage) { <span class="error-message">{{ errors.signatureImage }}</span> }
+                </div>
+              <!-- </div> -->
+            </div>
+
+            <div class="form-section">
+              <h3>Address Proof</h3>
+              <div class="form-group">
+                <label>Address Proof Document <span class="req">*</span> <span class="file-hint">(PDF/JPG/PNG, max 5MB)</span></label>
+                <div class="file-upload">
+                  @if (addressProofDocumentName()) {
+                    <div class="file-selected">
+                      <span class="file-icon">📎</span>
+                      <span>{{ addressProofDocumentName() }}</span>
+                      <button type="button" class="file-remove" (click)="onRemoveFile('addressProofDocument')">×</button>
+                    </div>
+                  } @else {
+                    <label class="file-drop-zone" for="addressProofDocument">
+                      <span class="upload-icon">🏠</span>
+                      <span class="upload-text">Upload Address Proof</span>
+                      <span class="upload-hint">Utility bill, bank statement, etc.</span>
+                      <input type="file" id="addressProofDocument"
+                        (change)="onFileSelect($event, 'addressProofDocument')"
+                        accept=".pdf,.jpg,.jpeg,.png" />
+                    </label>
+                  }
+                </div>
+                @if (errors.addressProofDocument) { <span class="error-message">{{ errors.addressProofDocument }}</span> }
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary" (click)="goBack()" [disabled]="loading()">← Back</button>
+              <button type="submit" class="btn btn-primary" [disabled]="loading()">Continue →</button>
+            </div>
+          </form>
+        }
+
+        <!-- ──────────────────────────────────────────
+             STEP 5: Review & Submit
+        ────────────────────────────────────────── -->
+        @if (step() === 5) {
+          <form (ngSubmit)="submitApplication()" class="auth-form kyc-form">
+
+            <!-- Customer Details Review -->
+            <div class="form-section review-section">
+              <h3>Personal Information</h3>
+              <div class="review-grid">
+                <div class="review-item"><span>Account Type</span><strong>{{ customerDetails.accountType || '—' }}</strong></div>
+                <div class="review-item"><span>Full Name</span><strong>{{ customerDetails.fullName || '—' }}</strong></div>
+                <div class="review-item"><span>Father's Name</span><strong>{{ customerDetails.fatherName || '—' }}</strong></div>
+                <div class="review-item"><span>Mother's Name</span><strong>{{ customerDetails.motherName || '—' }}</strong></div>
+                <div class="review-item"><span>Date of Birth</span><strong>{{ customerDetails.dateOfBirth || '—' }}</strong></div>
+                <div class="review-item"><span>Gender</span><strong>{{ customerDetails.gender || '—' }}</strong></div>
+                <div class="review-item"><span>Marital Status</span><strong>{{ customerDetails.maritalStatus || '—' }}</strong></div>
+                <div class="review-item"><span>Nationality</span><strong>{{ customerDetails.nationality || '—' }}</strong></div>
+                <div class="review-item"><span>Occupation</span><strong>{{ customerDetails.occupation || '—' }}</strong></div>
+                <div class="review-item"><span>Annual Income</span><strong>{{ customerDetails.annualIncome ? '₹' + customerDetails.annualIncome : '—' }}</strong></div>
+                <div class="review-item"><span>Mobile</span><strong>{{ customerDetails.phoneNumber || '—' }}</strong></div>
+                <div class="review-item"><span>Email</span><strong>{{ customerDetails.emailId || '—' }}</strong></div>
+                <div class="review-item"><span>Aadhaar No</span><strong>{{ customerDetails.aadhaarNumber ? '••••••••' + customerDetails.aadhaarNumber.slice(-4) : '—' }}</strong></div>
+                <div class="review-item"><span>PAN No</span><strong>{{ customerDetails.panNumber || '—' }}</strong></div>
+              </div>
+            </div>
+
+            <!-- Address Review -->
+            <div class="form-section review-section">
+              <h3>Address Details</h3>
+              <div class="address-review">
+                <div class="address-block">
+                  <div class="address-label">Current Address</div>
+                  <div class="address-text">
+                    {{ addressDetails.currentAddressLine }}<br>
+                    {{ addressDetails.currentCity }}, {{ addressDetails.currentState }} – {{ addressDetails.currentPincode }}
+                  </div>
+                </div>
+                <div class="address-block">
+                  <div class="address-label">Permanent Address</div>
+                  <div class="address-text">
+                    {{ addressDetails.permanentAddressLine }}<br>
+                    {{ addressDetails.permanentCity }}, {{ addressDetails.permanentState }} – {{ addressDetails.permanentPincode }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Nominee Review -->
+            <div class="form-section review-section">
+              <h3>Nominee Details</h3>
+              <div class="review-grid">
+                <div class="review-item"><span>Name</span><strong>{{ nomineeDetails.nomineeName || '—' }}</strong></div>
+                <div class="review-item"><span>Relation</span><strong>{{ nomineeDetails.nomineeRelation || '—' }}</strong></div>
+                <div class="review-item"><span>Age</span><strong>{{ nomineeDetails.nomineeAge || '—' }}</strong></div>
+                <div class="review-item"><span>Mobile</span><strong>{{ nomineeDetails.nomineeMobileNumber || '—' }}</strong></div>
+              </div>
+              <div class="review-item full-width">
+                <span>Address</span><strong>{{ nomineeDetails.nomineeAddress || '—' }}</strong>
+              </div>
+            </div>
+
+            <!-- Documents Review -->
+            <div class="form-section review-section">
+              <h3>Uploaded Documents</h3>
+              <div class="review-grid">
+                <div class="review-item"><span>Aadhaar Card</span>
+                  <strong [class.uploaded]="documents.aadhaarCardFile" [class.not-uploaded]="!documents.aadhaarCardFile">
+                    {{ aadhaarCardFileName() || '✗ Not uploaded' }}
+                  </strong>
+                </div>
+                <div class="review-item"><span>PAN Card</span>
+                  <strong [class.uploaded]="documents.panCardFile" [class.not-uploaded]="!documents.panCardFile">
+                    {{ panCardFileName() || '✗ Not uploaded' }}
+                  </strong>
+                </div>
+                <div class="review-item"><span>Passport</span>
+                  <strong [class.uploaded]="documents.passportFile" [class.optional-doc]="!documents.passportFile">
+                    {{ passportFileName() || 'Not provided' }}
+                  </strong>
+                </div>
+                <div class="review-item"><span>Voter ID</span>
+                  <strong [class.uploaded]="documents.voterIdFile" [class.optional-doc]="!documents.voterIdFile">
+                    {{ voterIdFileName() || 'Not provided' }}
+                  </strong>
+                </div>
+                <div class="review-item"><span>Profile Photo</span>
+                  <strong [class.uploaded]="documents.profilePhoto" [class.not-uploaded]="!documents.profilePhoto">
+                    {{ profilePhotoName() || '✗ Not uploaded' }}
+                  </strong>
+                </div>
+                <div class="review-item"><span>Signature</span>
+                  <strong [class.uploaded]="documents.signatureImage" [class.not-uploaded]="!documents.signatureImage">
+                    {{ signatureImageName() || '✗ Not uploaded' }}
+                  </strong>
+                </div>
+                <div class="review-item"><span>Address Proof</span>
+                  <strong [class.uploaded]="documents.addressProofDocument" [class.not-uploaded]="!documents.addressProofDocument">
+                    {{ addressProofDocumentName() || '✗ Not uploaded' }}
+                  </strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- Captcha -->
+            <div class="form-section">
+              <h3>Captcha Verification</h3>
+              <div class="captcha-wrap">
+                <div class="captcha-display">
+                  <span class="captcha-code" aria-hidden="true">{{ captchaCode() }}</span>
+                  <button type="button" class="captcha-refresh" (click)="refreshCaptcha()" title="Refresh">↺</button>
+                </div>
+                <div class="form-group captcha-input-group">
+                  <label for="captchaInput">Type the characters above <span class="req">*</span></label>
+                  <input type="text" id="captchaInput" class="form-control" [class.error]="errors.captcha"
+                    [(ngModel)]="captchaUserInput" name="captchaInput"
+                    placeholder="Enter captcha" autocomplete="off" />
+                  @if (errors.captcha) { <span class="error-message">{{ errors.captcha }}</span> }
+                </div>
+              </div>
+
+              <!-- Confirm checkbox -->
+              <div class="confirm-wrap" [class.has-error]="errors.confirmCheck">
+                <label class="confirm-label">
+                  <input type="checkbox" [(ngModel)]="confirmCheck" name="confirmCheck" />
+                  <span>I confirm that all the information provided is accurate and complete. I understand that providing false information may result in rejection of my application.</span>
+                </label>
+                @if (errors.confirmCheck) { <span class="error-message">{{ errors.confirmCheck }}</span> }
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary" (click)="goBack()" [disabled]="loading()">← Back</button>
+              <button type="submit" class="btn btn-primary" [disabled]="loading()">
+                @if (loading()) { <span class="spinner"></span> Processing... } @else { Submit Application }
+              </button>
+            </div>
+          </form>
+        }
+
+        <div class="auth-footer">
+          <p>Already have an account? <a routerLink="/login">Sign in</a></p>
+        </div>
+
+      </div><!-- /auth-card -->
+    </div><!-- /auth-container -->
+
+    <!-- RIGHT: Visual Panel -->
+    <div class="auth-visual">
+      <div class="visual-content">
+        <h2>Start Your Banking Journey</h2>
+        <p>Experience the future of digital banking with NeoBank</p>
+        <div class="features-list">
+          <div class="feature"><span class="feature-icon">💳</span><span>Multi-Account Support</span></div>
+          <div class="feature"><span class="feature-icon">⚡</span><span>Instant Transfers</span></div>
+          <div class="feature"><span class="feature-icon">📊</span><span>Smart Analytics</span></div>
+          <div class="feature"><span class="feature-icon">🔒</span><span>Bank-Grade Security</span></div>
+        </div>
+        <div class="step-hint">
+          <div class="step-hint-num">{{ step() }}/{{ totalSteps }}</div>
+          <div class="step-hint-label">{{ getStepTitle() }}</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /auth-page -->
+}

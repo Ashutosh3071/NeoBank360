@@ -1,0 +1,167 @@
+<div class="contact-page">
+  <div class="contact-header-bg">
+    <div class="glow-orb-1"></div>
+    <div class="glow-orb-2"></div>
+  </div>
+
+  <div class="container contact-content">
+    <div class="navigation-header">
+      <a routerLink="/" class="back-link">
+        <span class="arrow">←</span> Back to Home
+      </a>
+    </div>
+
+    <div class="contact-grid">
+      <!-- Contact Form -->
+      <div class="glass-card contact-form-card">
+        <div class="card-header">
+          <h2>Get in Touch</h2>
+          <p>Have any questions or feedback? Send us a message and we'll reply shortly.</p>
+        </div>
+
+        <form [formGroup]="contactForm" (ngSubmit)="onSubmit()" class="contact-form">
+          <!-- Success Alert -->
+          @if (successMessage()) {
+          <div class="alert alert-success">
+            <span class="alert-icon">✓</span>
+            <span class="alert-text">{{ successMessage() }}</span>
+          </div>
+          }
+
+          <!-- Error Alert -->
+          @if (errorMessage()) {
+          <div class="alert alert-danger">
+            <span class="alert-icon">✕</span>
+            <span class="alert-text">{{ errorMessage() }}</span>
+          </div>
+          }
+
+          <!-- Name field -->
+          <div class="form-group">
+            <label for="name">Full Name</label>
+            <input
+              type="text"
+              id="name"
+              formControlName="name"
+              placeholder="Your Name"
+              [class.input-error]="name?.invalid && (name?.dirty || name?.touched)"
+            />
+            @if (name?.invalid && (name?.dirty || name?.touched)) {
+            <div class="error-msg">
+              @if (name?.errors?.['required']) { Name is required. }
+              @if (name?.errors?.['minlength']) { Name must be at least 3 characters. }
+            </div>
+            }
+          </div>
+
+          <!-- Email field -->
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <input
+              type="email"
+              id="email"
+              formControlName="email"
+              placeholder="you@example.com"
+              [class.input-error]="email?.invalid && (email?.dirty || email?.touched)"
+            />
+            @if (email?.invalid && (email?.dirty || email?.touched)) {
+            <div class="error-msg">
+              @if (email?.errors?.['required']) { Email is required. }
+              @if (email?.errors?.['email']) { Please enter a valid email address. }
+            </div>
+            }
+          </div>
+
+          <!-- Subject field -->
+          <div class="form-group">
+            <label for="subject">Subject</label>
+            <input
+              type="text"
+              id="subject"
+              formControlName="subject"
+              placeholder="How can we help?"
+              [class.input-error]="subject?.invalid && (subject?.dirty || subject?.touched)"
+            />
+            @if (subject?.invalid && (subject?.dirty || subject?.touched)) {
+            <div class="error-msg">
+              @if (subject?.errors?.['required']) { Subject is required. }
+              @if (subject?.errors?.['minlength']) { Subject must be at least 5 characters. }
+            </div>
+            }
+          </div>
+
+          <!-- Message field -->
+          <div class="form-group">
+            <label for="message">Message</label>
+            <textarea
+              id="message"
+              formControlName="message"
+              rows="5"
+              placeholder="Write your message here..."
+              [class.input-error]="message?.invalid && (message?.dirty || message?.touched)"
+            ></textarea>
+            @if (message?.invalid && (message?.dirty || message?.touched)) {
+            <div class="error-msg">
+              @if (message?.errors?.['required']) { Message is required. }
+              @if (message?.errors?.['minlength']) { Message must be at least 10 characters. }
+            </div>
+            }
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" class="submit-btn" [disabled]="isSubmitting() || contactForm.invalid">
+            @if (isSubmitting()) {
+            <span class="spinner"></span>
+            Sending Message...
+            } @else {
+            Send Message
+            }
+          </button>
+        </form>
+      </div>
+
+      <!-- Contact Info Sidebar -->
+      <div class="contact-info-sidebar">
+        <div class="glass-card info-card">
+          <div class="info-icon">📧</div>
+          <div class="info-details">
+            <h3>Email Us</h3>
+            <p class="info-val">support@neobank360.com</p>
+            <p class="info-desc">For customer care and support inquiries.</p>
+          </div>
+        </div>
+
+        <div class="glass-card info-card">
+          <div class="info-icon">📞</div>
+          <div class="info-details">
+            <h3>Call Us</h3>
+            <p class="info-val">1-800-NEOBANK</p>
+            <p class="info-desc">Toll-free customer hotline available 24/7.</p>
+          </div>
+        </div>
+
+        <div class="glass-card info-card">
+          <div class="info-icon">🏢</div>
+          <div class="info-details">
+            <h3>Headquarters</h3>
+            <p class="info-val">Infosys Bhubaneswar DC</p>
+            <p class="info-desc">Lab 4, Patia, Bhubaneswar, Odisha, India.</p>
+          </div>
+        </div>
+
+        <div class="glass-card faq-preview-card">
+          <h3>Frequently Asked Questions</h3>
+          <p>Check out our support resources before sending a ticket.</p>
+          <div class="faq-item">
+            <strong>How long do account approvals take?</strong>
+            <p>Admin typically reviews and approves accounts within 24 business hours.</p>
+          </div>
+          <div class="faq-item">
+            <strong>Is my personal data secure?</strong>
+            <p>Yes, all sensitive credentials like Aadhaar and PAN are encrypted using bank-grade hashing algorithms.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

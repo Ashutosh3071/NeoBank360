@@ -1,0 +1,219 @@
+<div class="decisions-page">
+  <div class="decisions-container">
+    <div class="page-header">
+      <div>
+        <h1>Loan Applications <span class="header-accent">Review Panel</span></h1>
+        <p class="subtitle">Evaluate and action incoming credit requests with atomic disbursement triggers</p>
+      </div>
+      <div class="header-actions">
+        <a routerLink="/admin/dashboard" class="nav-link">
+          ← Back to Admin Panel
+        </a>
+      </div>
+    </div>
+
+    <!-- Alert Banners -->
+    @if (successMessage()) {
+    <div class="alert success">
+      <span class="alert-icon">✓</span>
+      {{ successMessage() }}
+    </div>
+    }
+    @if (errorMessage() && !selectedAppForReview()) {
+    <div class="alert error">
+      <span class="alert-icon">✕</span>
+      {{ errorMessage() }}
+    </div>
+    }
+
+    <!-- Filtering Bar -->
+    <div class="controls-panel glass-panel">
+      <div class="filter-group">
+        <span class="filter-label">Filter:</span>
+        <button class="filter-btn pending" [class.active]="activeFilter() === 'PENDING'" (click)="setFilter('PENDING')">
+          Pending
+        </button>
+        <button class="filter-btn approved" [class.active]="activeFilter() === 'APPROVED'" (click)="setFilter('APPROVED')">
+          Approved
+        </button>
+        <button class="filter-btn rejected" [class.active]="activeFilter() === 'REJECTED'" (click)="setFilter('REJECTED')">
+          Rejected
+        </button>
+        <button class="filter-btn" [class.active]="activeFilter() === ''" (click)="setFilter('')">
+          All Applications
+        </button>
+      </div>
+
+      <div class="total-summary">
+        Applications Found: <strong>{{ applications().length }}</strong>
+      </div>
+    </div>
+
+    <!-- Table -->
+    @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading application logs...</p>
+    </div>
+    } @else if (applications().length === 0) {
+    <div class="empty-state glass-panel">
+      <span class="empty-icon">⚖️</span>
+      <h3>No Applications Found</h3>
+      <p>There are no applications matching the active filter.</p>
+    </div>
+    } @else {
+    <div class="table-wrapper glass-panel animated fadeInUp">
+      <table>
+        <thead>
+          <tr>
+            <th>App ID</th>
+            <th>Applicant Email</th>
+            <th>Facility</th>
+            <th>Principal Amount</th>
+            <th>Tenure Duration</th>
+            <th>Submitted On</th>
+            <th>Status</th>
+            <th class="action-col">Evaluation</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (app of applications(); track app.id) {
+          <tr>
+            <td class="mono font-semibold">#LA-{{ app.id }}</td>
+            <td>
+              <div class="user-info">
+                <span class="email font-semibold">{{ app.userEmail }}</span>
+                <span class="name">{{ app.userFullName }}</span>
+              </div>
+            </td>
+            <td class="facility-name font-semibold">{{ app.loanProductName }}</td>
+            <td class="amount font-semibold highlight-white">{{ app.requestedAmount | currency : 'INR' : 'symbol' : '1.2-2' }}</td>
+            <td>{{ app.requestedTenureMonths }} Months</td>
+            <td>{{ app.appliedAt | date : 'medium' }}</td>
+            <td>
+              <span
+                class="status-pill"
+                [class.status-approved]="app.status === 'APPROVED'"
+                [class.status-pending]="app.status === 'PENDING'"
+                [class.status-rejected]="app.status === 'REJECTED'"
+              >
+                {{ app.status }}
+              </span>
+            </td>
+            <td class="action-col">
+              @if (app.status === 'PENDING') {
+              <button class="btn-review" (click)="openReviewModal(app)">
+                ⚖ Evaluate
+              </button>
+              } @else {
+              <div class="remarks-box text-left">
+                @if (app.adminRemarks) {
+                <span class="remarks-label">Admin Remarks:</span>
+                <p class="remarks-text">"{{ app.adminRemarks }}"</p>
+                } @else {
+                <span class="text-muted">No remarks recorded</span>
+                }
+              </div>
+              }
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    }
+
+    <!-- MODAL REVIEW WINDOW -->
+    @if (selectedAppForReview(); as app) {
+    <div class="modal-overlay" (click)="closeReviewModal()">
+      <div class="modal-content glass-panel animated fadeInUp" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>Evaluate Application #LA-{{ app.id }}</h2>
+          <button type="button" class="btn-close-modal" (click)="closeReviewModal()">✕</button>
+        </div>
+
+        @if (errorMessage()) {
+        <div class="alert error">
+          <span class="alert-icon">✕</span>
+          {{ errorMessage() }}
+        </div>
+        }
+
+        <div class="app-summary-grid">
+          <div class="sum-item">
+            <span class="sum-label">Applicant Name</span>
+            <span class="sum-value">{{ app.userFullName }}</span>
+          </div>
+          <div class="sum-item">
+            <span class="sum-label">Applicant Email</span>
+            <span class="sum-value">{{ app.userEmail }}</span>
+          </div>
+          <div class="sum-item">
+            <span class="sum-label">Selected Facility</span>
+            <span class="sum-value">{{ app.loanProductName }}</span>
+          </div>
+          <div class="sum-item">
+            <span class="sum-label">Tenure Duration</span>
+            <span class="sum-value">{{ app.requestedTenureMonths }} Months</span>
+          </div>
+          <div class="sum-item large">
+            <span class="sum-label">Requested Principal</span>
+            <span class="sum-value highlight-cyan">{{ app.requestedAmount | currency : 'INR' : 'symbol' : '1.2-2' }}</span>
+          </div>
+          <div class="sum-item large">
+            <span class="sum-label">Disbursement Account</span>
+            @if (app.disbursementAccountNumber) {
+            <span class="sum-value" style="display:flex;align-items:center;gap:6px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" style="flex-shrink:0;color:var(--primary)">
+                <rect x="2" y="5" width="20" height="14" rx="2"/>
+                <path d="M2 10h20M6 14h2M10 14h4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              {{ app.disbursementAccountNumber }}
+            </span>
+            } @else {
+            <span class="sum-value" style="color:var(--text-muted);">Not specified</span>
+            }
+          </div>
+        </div>
+
+        <form [formGroup]="decisionForm" (ngSubmit)="submitDecision()" novalidate>
+          <div class="form-group">
+            <label>Credit Decision</label>
+            <div class="decision-radios">
+              <label class="radio-label approve-radio" [class.selected]="decisionForm.value.decision === 'APPROVED'">
+                <input type="radio" value="APPROVED" formControlName="decision" />
+                <span class="radio-text">✓ Approve & Disburse</span>
+              </label>
+              <label class="radio-label reject-radio" [class.selected]="decisionForm.value.decision === 'REJECTED'">
+                <input type="radio" value="REJECTED" formControlName="decision" />
+                <span class="radio-text">✕ Decline Request</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="adminRemarks">Decision Remarks / Reason</label>
+            <textarea
+              id="adminRemarks"
+              formControlName="adminRemarks"
+              placeholder="e.g. Credit score verified. Approved for disbursement."
+              class="form-control text-area"
+              rows="2"
+            ></textarea>
+            @if (decisionForm.get('adminRemarks')?.touched && decisionForm.get('adminRemarks')?.errors?.['maxlength']) {
+            <div class="error-hint">Remarks cannot exceed 255 characters.</div>
+            }
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-secondary" (click)="closeReviewModal()" [disabled]="isSubmitting()">Cancel</button>
+            <button type="submit" class="btn-primary" [disabled]="isSubmitting()">
+              {{ isSubmitting() ? 'Submitting...' : 'Record Decision ✓' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    }
+  </div>
+</div>

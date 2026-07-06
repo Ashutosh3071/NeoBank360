@@ -1,0 +1,161 @@
+<div class="admin-products-page">
+  <div class="admin-products-container">
+    <div class="page-header">
+      <div>
+        <h1>Loan Product <span class="header-accent">Configuration</span></h1>
+        <p class="subtitle">Configure and manage credit product rules, limit bounds, and interest rates</p>
+      </div>
+      <div class="header-actions">
+        <a routerLink="/admin/dashboard" class="nav-link">
+          ← Back to Admin Panel
+        </a>
+      </div>
+    </div>
+
+    <!-- Alerts -->
+    @if (successMessage()) {
+    <div class="alert success">
+      <span class="alert-icon">✓</span>
+      {{ successMessage() }}
+    </div>
+    }
+    @if (errorMessage()) {
+    <div class="alert error">
+      <span class="alert-icon">✕</span>
+      {{ errorMessage() }}
+    </div>
+    }
+
+    <div class="admin-products-grid">
+      <!-- Left Column: Configuration Form -->
+      <section class="config-card glass-panel">
+        <h2 class="card-title">Configure New Product</h2>
+        <p class="card-subtitle">Define parameters and validations for a new loan facility.</p>
+
+        <form [formGroup]="productForm" (ngSubmit)="onSubmit()" novalidate>
+          <div class="form-group">
+            <label for="productName">Product Name</label>
+            <input
+              type="text"
+              id="productName"
+              formControlName="productName"
+              placeholder="e.g. Personal Gold Loan"
+              class="form-control"
+            />
+            @if (productForm.get('productName')?.touched && productForm.get('productName')?.invalid) {
+            <div class="error-hint">Product Name is required (min 3 chars).</div>
+            }
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="minAmount">Min Principal (₹)</label>
+              <input
+                type="number"
+                id="minAmount"
+                formControlName="minAmount"
+                placeholder="e.g. 10000"
+                class="form-control"
+              />
+              @if (productForm.get('minAmount')?.touched && productForm.get('minAmount')?.invalid) {
+              <div class="error-hint">Min amount is required (min 1000).</div>
+              }
+            </div>
+
+            <div class="form-group">
+              <label for="maxAmount">Max Principal (₹)</label>
+              <input
+                type="number"
+                id="maxAmount"
+                formControlName="maxAmount"
+                placeholder="e.g. 500000"
+                class="form-control"
+              />
+              @if (productForm.get('maxAmount')?.touched && productForm.get('maxAmount')?.invalid) {
+              <div class="error-hint">Max amount is required.</div>
+              }
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="annualInterestRate">Annual Interest Rate (% p.a.)</label>
+            <input
+              type="number"
+              id="annualInterestRate"
+              formControlName="annualInterestRate"
+              placeholder="e.g. 10.5"
+              step="0.01"
+              class="form-control"
+            />
+            @if (productForm.get('annualInterestRate')?.touched && productForm.get('annualInterestRate')?.invalid) {
+            <div class="error-hint">Valid rate is required (0.01 - 100).</div>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="allowedTenures">Allowed Tenures (Comma Separated Months)</label>
+            <input
+              type="text"
+              id="allowedTenures"
+              formControlName="allowedTenures"
+              placeholder="e.g. 12,24,36"
+              class="form-control"
+            />
+            <span class="input-hint">Specify allowed installment durations in months. e.g. "12,24,36"</span>
+            @if (productForm.get('allowedTenures')?.touched && productForm.get('allowedTenures')?.invalid) {
+            <div class="error-hint">Comma separated months are required (e.g. 12,24,36).</div>
+            }
+          </div>
+
+          <button type="submit" class="btn-primary btn-block" [disabled]="isSaving()">
+            {{ isSaving() ? 'Saving Product...' : 'Create Loan Product ✓' }}
+          </button>
+        </form>
+      </section>
+
+      <!-- Right Column: Products List -->
+      <section class="list-section">
+        <h2 class="section-title">Active Loan Products</h2>
+        
+        @if (isLoading()) {
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Fetching active configurations...</p>
+        </div>
+        } @else if (products().length === 0) {
+        <div class="empty-state glass-panel">
+          <span class="empty-icon">📋</span>
+          <h3>No Products Found</h3>
+          <p>Configure a product on the left to activate credit facilities.</p>
+        </div>
+        } @else {
+        <div class="products-list">
+          @for (prod of products(); track prod.id) {
+          <div class="prod-list-card glass-panel animated fadeInUp">
+            <div class="prod-header">
+              <h3>{{ prod.productName }}</h3>
+              <span class="rate-badge">{{ prod.annualInterestRate }}% p.a.</span>
+            </div>
+            
+            <div class="prod-details">
+              <div class="detail-pill">
+                <span class="label">Min Amount</span>
+                <span class="val mono">{{ prod.minAmount | currency : 'INR' : 'symbol' : '1.0-0' }}</span>
+              </div>
+              <div class="detail-pill">
+                <span class="label">Max Amount</span>
+                <span class="val mono">{{ prod.maxAmount | currency : 'INR' : 'symbol' : '1.0-0' }}</span>
+              </div>
+              <div class="detail-pill full-width">
+                <span class="label">Allowed Tenures</span>
+                <span class="val">{{ prod.allowedTenures }} Months</span>
+              </div>
+            </div>
+          </div>
+          }
+        </div>
+        }
+      </section>
+    </div>
+  </div>
+</div>

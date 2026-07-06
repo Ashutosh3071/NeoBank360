@@ -1,0 +1,724 @@
+/* =============================================
+   NeoBank360 - Premium Dark Glassmorphic Theme
+   ============================================= */
+@import 'tailwindcss';
+
+@theme {
+  /* Colors */
+  --color-bg-deep: #030712;
+  --color-bg-body: #060a16;
+  --color-bg-surface: #0b1120;
+  
+  --color-primary: #00f0ff;
+  --color-primary-dim: #00b8d4;
+  --color-secondary: #bf7aff;
+  --color-secondary-dim: #9333ea;
+  --color-accent: #10b981;
+  
+  /* Glass Tokens */
+  --background-glass-card: rgba(10, 17, 32, 0.45);
+  --background-glass-overlay: rgba(8, 12, 24, 0.80);
+  
+  /* Shadows & Glows */
+  --shadow-glass-sm: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-glass-md: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-glass-lg: 0 16px 48px rgba(0, 0, 0, 0.6);
+  --shadow-glow-cyan: 0 0 20px rgba(0, 240, 255, 0.15);
+  --shadow-glow-violet: 0 0 20px rgba(191, 122, 255, 0.15);
+  
+  /* Z-Index Hierarchy */
+  --z-index-base: 0;
+  --z-index-card: 10;
+  --z-index-dropdown: 100;
+  --z-index-sticky: 1000;
+  --z-index-modal: 2000;
+  --z-index-tooltip: 3000;
+
+  /* Custom Animations */
+  --animate-fade-in-up: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-scale-in: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* ============ DESIGN TOKENS ============ */
+:root {
+  /* Backgrounds */
+  --bg-deep: #030712;
+  --bg-body: #060a16;
+  --bg-surface: #0b1120;
+  --bg-card: rgba(10, 17, 32, 0.45);
+  --bg-card-solid: #0b1120;
+  --bg-card-hover: rgba(15, 23, 42, 0.60);
+  --bg-input: rgba(8, 12, 24, 0.80);
+
+  /* Glass */
+  --glass-bg: rgba(10, 17, 32, 0.45);
+  --glass-border: rgba(255, 255, 255, 0.05);
+  --glass-border-hover: rgba(255, 255, 255, 0.12);
+  --glass-blur: 20px;
+  --glass-blur-card: 20px;
+  --glass-blur-overlay: 30px;
+  --background-glass-card: rgba(10, 17, 32, 0.45);
+  --background-glass-overlay: rgba(8, 12, 24, 0.80);
+
+  /* Typography */
+  --text-primary: #f3f4f6;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+  --text-inverse: #030712;
+
+  /* Primary: Electric Cyan */
+  --primary: #00f0ff;
+  --primary-dim: #00b8d4;
+  --primary-glow: rgba(0, 240, 255, 0.15);
+  --primary-glow-strong: rgba(0, 240, 255, 0.30);
+  --primary-rgb: 0, 240, 255;
+
+  /* Secondary: Violet */
+  --secondary: #bf7aff;
+  --secondary-dim: #9333ea;
+  --secondary-glow: rgba(191, 122, 255, 0.15);
+  --secondary-rgb: 191, 122, 255;
+
+  /* Accent: Emerald */
+  --accent: #10b981;
+  --accent-dim: #059669;
+  --accent-glow: rgba(16, 185, 129, 0.15);
+  --accent-rgb: 16, 185, 129;
+
+  /* Danger */
+  --danger: #ff6b6b;
+  --danger-dim: #dc2626;
+  --danger-glow: rgba(255, 107, 107, 0.15);
+
+  /* Warning */
+  --warning: #f59e0b;
+  --warning-dim: #d97706;
+  --warning-glow: rgba(245, 158, 11, 0.15);
+
+  /* Success */
+  --success: #10b981;
+  --success-glow: rgba(16, 185, 129, 0.15);
+
+  /* Borders & Radii */
+  --radius: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.6);
+  --shadow-xl: 0 24px 64px rgba(0, 0, 0, 0.7);
+  --shadow-glow-primary: 0 0 20px rgba(0, 240, 255, 0.20);
+  --shadow-glow-secondary: 0 0 20px rgba(191, 122, 255, 0.20);
+  --shadow-glow-accent: 0 0 20px rgba(16, 185, 129, 0.20);
+  --shadow-glass-sm: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-glass-md: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-glass-lg: 0 16px 48px rgba(0, 0, 0, 0.6);
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #00f0ff, #9333ea);
+  --gradient-secondary: linear-gradient(135deg, #bf7aff, #ec4899);
+  --gradient-accent: linear-gradient(135deg, #10b981, #06b6d4);
+  --gradient-danger: linear-gradient(135deg, #ff6b6b, #fb923c);
+  --gradient-hero: linear-gradient(160deg, #030712 0%, #0b1120 40%, #060e22 70%, #030712 100%);
+  --gradient-card: linear-gradient(145deg, rgba(10, 17, 32, 0.8), rgba(8, 12, 24, 0.6));
+  --gradient-page: linear-gradient(180deg, #060a16 0%, #030712 100%);
+
+  /* Fluid layout margins and paddings */
+  --layout-padding-y: clamp(1.5rem, 4vw, 3rem);
+  --layout-padding-x: clamp(1rem, 3vw, 2.5rem);
+
+  /* Fluid component spacing scale */
+  --spacing-xs: clamp(0.25rem, 0.6vw, 0.5rem);
+  --spacing-sm: clamp(0.5rem, 1.2vw, 0.75rem);
+  --spacing-md: clamp(0.75rem, 2vw, 1.25rem);
+  --spacing-lg: clamp(1.25rem, 3.5vw, 2rem);
+  --spacing-xl: clamp(1.75rem, 5vw, 3rem);
+  
+  /* Fluid border radii */
+  --radius-fluid-sm: clamp(8px, 1.2vw, 12px);
+  --radius-fluid-lg: clamp(12px, 1.8vw, 16px);
+}
+
+/* ============ GLOBAL RESET & SCROLLBAR ============ */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+body {
+  min-height: 100%;
+  margin: 0;
+  font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  background: var(--bg-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+  overflow: visible;
+  
+  /* Firefox Scrollbar Support */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+/* Webkit Scrollbars (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  transition: background 0.3s ease;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 240, 255, 0.25); /* Electric Cyan highlight on hover */
+}
+
+/* ============ LINKS ============ */
+a {
+  text-decoration: none;
+  color: var(--primary);
+  transition: color 0.25s ease, filter 0.25s ease;
+}
+a:hover {
+  color: #4dddff;
+  filter: brightness(1.1);
+}
+
+/* ============ BUTTONS BASE ============ */
+button {
+  font-family: inherit;
+  transition: all 0.25s ease;
+}
+button:hover {
+  transform: translateY(-1px);
+}
+button:active {
+  transform: translateY(0);
+}
+
+/* ============ GLASS UTILITY ============ */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  transition: border-color 0.3s ease;
+}
+.glass-panel:hover {
+  border-color: var(--glass-border-hover);
+}
+
+/* Tier 1 Glass Card */
+.glass-card {
+  background: var(--background-glass-card);
+  backdrop-filter: blur(var(--glass-blur-card));
+  -webkit-backdrop-filter: blur(var(--glass-blur-card));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-glass-md);
+  border-radius: 16px;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, box-shadow;
+}
+
+.glass-card-hover:hover {
+  transform: translateY(-5px) scale(1.005);
+  border-color: var(--glass-border-hover);
+  box-shadow: var(--shadow-glass-lg), 0 0 25px rgba(0, 240, 255, 0.08);
+}
+
+/* Tier 2 Glass Overlay (Modals, Popovers, Dropdowns) */
+.glass-overlay {
+  background: var(--background-glass-overlay);
+  backdrop-filter: blur(var(--glass-blur-overlay));
+  -webkit-backdrop-filter: blur(var(--glass-blur-overlay));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: var(--shadow-glass-lg);
+  border-radius: 20px;
+}
+
+/* Glow Text Utilities */
+.glow-text {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glow-text-secondary {
+  background: var(--gradient-secondary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-glow-primary {
+  text-shadow: 0 0 15px rgba(0, 240, 255, 0.35);
+}
+.text-glow-secondary {
+  text-shadow: 0 0 15px rgba(191, 122, 255, 0.35);
+}
+
+/* ============ SCALABLE STAGGER SYSTEM ============ */
+.stagger-item {
+  animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--stagger-idx, 0) * 60ms);
+}
+
+/* ============ KEYFRAMES & HARDWARE-ACCELERATED ANIMATIONS ============ */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInLeft {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeInRight {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.05); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes floatOrb {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-30px) scale(1.08); }
+}
+
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 15px rgba(0, 240, 255, 0.15); }
+  50%      { box-shadow: 0 0 30px rgba(0, 240, 255, 0.30); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.15;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes cardFloat {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50%      { transform: translateY(-8px) rotate(-1deg); }
+}
+
+@keyframes orbMove {
+  0%   { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(30px, -20px) scale(1.05); }
+  66%  { transform: translate(-15px, 15px) scale(0.95); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+/* Animation utilities */
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out both;
+}
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out both;
+}
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out both;
+}
+.pulse-glow-element {
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+
+/* Staggered children animation (legacy fallback) */
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 60ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 120ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 180ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 240ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 300ms; }
+.stagger-children > *:nth-child(7) { animation-delay: 360ms; }
+.stagger-children > *:nth-child(8) { animation-delay: 420ms; }
+
+/* Card hover effect (legacy fallback) */
+.card-hover {
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--glass-border-hover);
+}
+
+/* Workspace Classes */
+.workspace-page {
+  min-height: calc(100vh - 64px);
+  background: var(--bg-body);
+  display: flex;
+  flex-direction: column;
+}
+
+.workspace-container {
+  width: 100%;
+  max-width: 1280px; /* Aligns precisely with .navbar-container */
+  margin: 0 auto;
+  padding: var(--layout-padding-y) var(--layout-padding-x);
+  box-sizing: border-box;
+}
+
+/* ========================================================
+   NeoBank360 Premium Uniform Button & Form Overrides
+   ======================================================== */
+
+/* 1. Primary Buttons & Call-to-Actions */
+.btn-primary, .primary-btn, .submit-btn, .pay-btn, .btn-debit-confirm, .redeem-btn, .btn-pay {
+  background: var(--gradient-primary) !important;
+  color: #ffffff !important;
+  border: none !important;
+  padding: 12px 24px !important;
+  border-radius: var(--radius) !important;
+  font-size: 0.9rem !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 4px 16px rgba(0, 240, 255, 0.2) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  font-family: inherit !important;
+  text-decoration: none !important;
+  outline: none !important;
+}
+
+.btn-primary:hover:not(:disabled), 
+.primary-btn:hover:not(:disabled), 
+.submit-btn:hover:not(:disabled), 
+.pay-btn:hover:not(:disabled), 
+.btn-debit-confirm:hover:not(:disabled),
+.redeem-btn:hover:not(:disabled),
+.btn-pay:hover:not(:disabled) {
+  transform: translateY(-2.5px) !important;
+  box-shadow: 0 6px 22px rgba(0, 240, 255, 0.4) !important;
+  filter: brightness(1.05) !important;
+}
+
+.btn-primary:disabled, 
+.primary-btn:disabled, 
+.submit-btn:disabled, 
+.pay-btn:disabled, 
+.btn-debit-confirm:disabled,
+.redeem-btn:disabled,
+.btn-pay:disabled {
+  opacity: 0.45 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* 2. Secondary Buttons (Normal) */
+.btn-secondary, .btn-secondary-modal {
+  background: rgba(255, 255, 255, 0.03) !important;
+  color: var(--text-secondary) !important;
+  border: 1px solid var(--glass-border) !important;
+  padding: 12px 24px !important;
+  border-radius: var(--radius) !important;
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  font-family: inherit !important;
+  outline: none !important;
+}
+
+.btn-secondary:hover:not(:disabled), 
+.btn-secondary-modal:hover:not(:disabled) {
+  border-color: var(--glass-border-hover) !important;
+  background: var(--bg-card-hover) !important;
+  color: var(--text-primary) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+}
+
+.btn-secondary:disabled, 
+.btn-secondary-modal:disabled {
+  opacity: 0.45 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* 2b. Secondary Buttons (Compact/Utility) */
+.refresh-btn, .reload-btn, .pag-btn, .secondary-btn {
+  background: rgba(255, 255, 255, 0.03) !important;
+  color: var(--text-secondary) !important;
+  border: 1px solid var(--glass-border) !important;
+  padding: 8px 16px !important;
+  border-radius: var(--radius) !important;
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  font-family: inherit !important;
+  outline: none !important;
+}
+
+.refresh-btn:hover:not(:disabled), 
+.reload-btn:hover:not(:disabled),
+.pag-btn:hover:not(:disabled),
+.secondary-btn:hover:not(:disabled) {
+  border-color: var(--glass-border-hover) !important;
+  background: var(--bg-card-hover) !important;
+  color: var(--text-primary) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+}
+
+.refresh-btn:disabled, 
+.reload-btn:disabled,
+.pag-btn:disabled,
+.secondary-btn:disabled {
+  opacity: 0.45 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* 3. Danger Buttons (Normal) */
+.btn-danger {
+  background: rgba(239, 68, 68, 0.05) !important;
+  color: #ef4444 !important;
+  border: 1px solid rgba(239, 68, 68, 0.2) !important;
+  padding: 12px 24px !important;
+  border-radius: var(--radius) !important;
+  cursor: pointer !important;
+  font-size: 0.9rem !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  font-family: inherit !important;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.03) !important;
+  outline: none !important;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 18px rgba(239, 68, 68, 0.35) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* 3b. Danger Buttons (Icon-Only Square) */
+.delete-btn {
+  background: rgba(239, 68, 68, 0.05) !important;
+  color: #ef4444 !important;
+  border: 1px solid rgba(239, 68, 68, 0.2) !important;
+  width: 36px !important;
+  height: 36px !important;
+  padding: 0 !important;
+  border-radius: 10px !important;
+  cursor: pointer !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-family: inherit !important;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.03) !important;
+  outline: none !important;
+  flex-shrink: 0 !important;
+}
+
+.delete-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 18px rgba(239, 68, 68, 0.35) !important;
+  transform: translateY(-2px) scale(1.05) !important;
+}
+
+/* 4. Warning / Overdue Buttons */
+.overdue-btn, .btn-warning {
+  background: rgba(245, 158, 11, 0.05) !important;
+  color: var(--warning) !important;
+  border: 1px solid rgba(245, 158, 11, 0.25) !important;
+  padding: 10px 18px !important;
+  border-radius: var(--radius) !important;
+  cursor: pointer !important;
+  font-weight: 600 !important;
+  font-size: 0.85rem !important;
+  transition: all 0.28s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  font-family: inherit !important;
+  outline: none !important;
+}
+
+.overdue-btn:hover:not(:disabled), .btn-warning:hover:not(:disabled) {
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 18px rgba(245, 158, 11, 0.3) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* 5. Inputs & Form Select Dropdowns */
+.form-control, input[type="text"], input[type="number"], input[type="date"], input[type="month"], input[type="password"], input[type="email"], select, textarea {
+  width: 100%;
+  background: var(--bg-input) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: var(--radius) !important;
+  padding: 12px 16px !important;
+  color: var(--text-primary) !important;
+  font-size: 0.95rem !important;
+  font-weight: 500 !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  outline: none !important;
+  font-family: inherit !important;
+  box-sizing: border-box !important;
+}
+
+.form-control:focus, input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus, input[type="month"]:focus, input[type="password"]:focus, input[type="email"]:focus, select:focus, textarea:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px var(--primary-glow-strong), var(--shadow-glow-primary) !important;
+  background: var(--bg-surface) !important;
+}
+
+select option {
+  background-color: #0f1629 !important;
+  color: #f1f5f9 !important;
+}
+
+/* 6. Dynamic Icon Hover Micro-animations */
+.stat-icon, .redeem-icon, .earn-emoji, .product-icon, .card-icon {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.stat-card:hover .stat-icon, 
+.redeem-card:hover .redeem-icon, 
+.earn-card:hover .earn-emoji, 
+.product-card:hover .product-icon, 
+.card:hover .card-icon {
+  transform: scale(1.18) rotate(-3deg) !important;
+}
+
+/* 7. Action Link Hover Effect */
+.action-link {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-weight: 600 !important;
+  transition: all 0.25s ease !important;
+  text-decoration: none !important;
+}
+
+.action-link:hover {
+  transform: translateX(4px) !important;
+  color: var(--primary) !important;
+  filter: brightness(1.1) !important;
+}
+
+/* ========================================================
+   8. Input Wrapper Prefix & Icon Left Padding Overrides
+   ======================================================== */
+.input-wrapper .input-icon + input,
+.input-wrapper .input-prefix + input,
+.input-wrapper .input-icon + select,
+.input-wrapper .input-prefix + select,
+.input-wrapper .input-icon + textarea,
+.input-wrapper .input-prefix + textarea,
+.input-wrapper svg.input-icon + input,
+.input-wrapper span.input-icon + input,
+.input-wrapper span.input-prefix + input,
+.input-wrapper .input-icon + input[type="text"],
+.input-wrapper .input-icon + input[type="number"],
+.input-wrapper .input-icon + input[type="email"],
+.input-wrapper .input-icon + input[type="password"],
+.input-wrapper .input-prefix + input[type="text"],
+.input-wrapper .input-prefix + input[type="number"],
+.input-wrapper .input-prefix + input[type="email"],
+.input-wrapper .input-prefix + input[type="password"],
+.input-wrapper svg.input-icon + input[type="text"],
+.input-wrapper span.input-icon + input[type="text"],
+.input-wrapper span.input-icon + input[type="email"],
+.input-wrapper span.input-icon + input[type="password"] {
+  padding-left: 44px !important;
+}

@@ -1,0 +1,239 @@
+<div class="page">
+  <div class="container">
+    <!-- Header -->
+    <div class="page-header">
+      <div>
+        <h1>💳 Bill Management</h1>
+        <p class="subtitle">Track, manage, and pay your bills on time</p>
+      </div>
+      <button class="primary-btn" (click)="showCreateForm.set(!showCreateForm())">
+        @if (showCreateForm()) {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" style="margin-right: 6px; display: inline-block; vertical-align: middle;">
+            <path d="M18 6L6 18M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Close
+        } @else {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" style="margin-right: 6px; display: inline-block; vertical-align: middle;">
+            <path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          New Bill
+        }
+      </button>
+    </div>
+
+    <!-- Alerts -->
+    @if (successMessage()) {
+    <div class="alert success">✓ {{ successMessage() }}</div>
+    } @if (errorMessage()) {
+    <div class="alert error">⚠ {{ errorMessage() }}</div>
+    }
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-icon pending-icon">📋</span>
+        <div class="stat-info">
+          <span class="stat-value">{{ stats().pending }}</span>
+          <span class="stat-label">Pending</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon paid-icon">✅</span>
+        <div class="stat-info">
+          <span class="stat-value">{{ stats().paid }}</span>
+          <span class="stat-label">Paid</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon overdue-icon">🚨</span>
+        <div class="stat-info">
+          <span class="stat-value">{{ stats().overdue }}</span>
+          <span class="stat-label">Overdue</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon amount-icon">💰</span>
+        <div class="stat-info">
+          <span class="stat-value">{{
+            stats().totalPending | currency : 'INR' : 'symbol' : '1.0-0'
+          }}</span>
+          <span class="stat-label">Due Amount</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create Form (collapsible) -->
+    @if (showCreateForm()) {
+    <section class="card create-card">
+      <h2>Add New Bill</h2>
+      <form [formGroup]="createForm" (ngSubmit)="onCreateBill()" novalidate>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="billerName">Biller Name</label>
+            <input
+              id="billerName"
+              formControlName="billerName"
+              placeholder="e.g. Electricity Board"
+            />
+          </div>
+          <div class="form-group">
+            <label for="amount">Amount (₹)</label>
+            <input
+              id="amount"
+              type="number"
+              min="0.01"
+              step="0.01"
+              formControlName="amount"
+              placeholder="1500"
+            />
+          </div>
+          <div class="form-group">
+            <label for="category">Category</label>
+            <select id="category" formControlName="category">
+              <option value="GROCERIES">GROCERIES</option>
+              <option value="UTILITIES">UTILITIES</option>
+              <option value="RENT">RENT</option>
+              <option value="ENTERTAINMENT">ENTERTAINMENT</option>
+              <option value="TRANSFER">TRANSFER</option>
+              <option value="OTHER">OTHER</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="dueDate">Due Date</label>
+            <input id="dueDate" type="date" formControlName="dueDate" />
+          </div>
+        </div>
+        <button type="submit" class="submit-btn" [disabled]="isCreating() || createForm.invalid">
+          @if (isCreating()) {
+            <span>Creating...</span>
+          } @else {
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" style="margin-right: 6px; display: inline-block; vertical-align: middle;">
+              <path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Add Bill</span>
+          }
+        </button>
+      </form>
+    </section>
+    }
+
+    <!-- Filter & Search Bar -->
+    <div class="toolbar">
+      <div class="filter-tabs">
+        <button [class.active]="activeFilter() === 'ALL'" (click)="setFilter('ALL')">
+          All ({{ stats().total }})
+        </button>
+        <button [class.active]="activeFilter() === 'PENDING'" (click)="setFilter('PENDING')">
+          Pending
+        </button>
+        <button [class.active]="activeFilter() === 'PAID'" (click)="setFilter('PAID')">Paid</button>
+        <button [class.active]="activeFilter() === 'OVERDUE'" (click)="setFilter('OVERDUE')">
+          Overdue
+        </button>
+      </div>
+      <div class="search-sort">
+        <input
+          class="search-input"
+          type="text"
+          placeholder="🔍 Search biller..."
+          (input)="onSearch($event)"
+        />
+        <div class="sort-btns">
+          <button [class.active]="activeSort() === 'dueDate'" (click)="setSort('dueDate')">
+            Date {{ activeSort() === 'dueDate' ? (sortAsc() ? '↑' : '↓') : '' }}
+          </button>
+          <button [class.active]="activeSort() === 'amount'" (click)="setSort('amount')">
+            Amount {{ activeSort() === 'amount' ? (sortAsc() ? '↑' : '↓') : '' }}
+          </button>
+          <button [class.active]="activeSort() === 'billerName'" (click)="setSort('billerName')">
+            Name {{ activeSort() === 'billerName' ? (sortAsc() ? '↑' : '↓') : '' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bills List -->
+    @if (isLoading()) {
+    <div class="empty-state">
+      <div class="loader"></div>
+      <p>Loading bills...</p>
+    </div>
+    } @else if (filteredBills().length === 0) {
+    <div class="empty-state">
+      <span class="empty-icon">📭</span>
+      <p>
+        No bills found.
+        {{ activeFilter() !== 'ALL' ? 'Try a different filter.' : 'Add your first bill above.' }}
+      </p>
+    </div>
+    } @else {
+    <div class="bill-list">
+      @for (bill of filteredBills(); track bill.id) {
+      <div
+        class="bill-item"
+        [class.overdue]="bill.status === 'OVERDUE'"
+        [class.paid]="bill.status === 'PAID'"
+      >
+        <div class="bill-item-header">
+          <div class="bill-main">
+            <h3>{{ bill.billerName }}</h3>
+            <span class="bill-amount">{{ bill.amount | currency : 'INR' }}</span>
+          </div>
+          <div class="bill-badges">
+            @if (bill.remindMe) {
+            <span class="badge reminder">⏰ Due Soon</span>
+            }
+            <span
+              class="badge"
+              [class.pending]="bill.status === 'PENDING'"
+              [class.paid-badge]="bill.status === 'PAID'"
+              [class.overdue-badge]="bill.status === 'OVERDUE'"
+            >
+              {{ bill.status }}
+            </span>
+          </div>
+        </div>
+        <div class="bill-meta">
+          <span>📅 Due: {{ bill.dueDate | date : 'mediumDate' }}</span>
+          <span>Created: {{ bill.createdAt | date : 'shortDate' }}</span>
+          <span class="badge category-tag">{{ bill.category || 'OTHER' }}</span>
+        </div>
+        <div class="bill-actions">
+          @if (bill.status === 'PENDING' || bill.status === 'OVERDUE') {
+          <div class="pay-flow">
+            <select class="account-select" [value]="selectedAccounts()[bill.id] || ''" (change)="selectAccountForBill(bill.id, +$any($event.target).value)">
+              <option value="" disabled selected>Select Account</option>
+              @for (acc of userAccounts(); track acc.id) {
+                <option [value]="acc.id">
+                  {{ acc.accountType === 'SAVINGS' ? 'Savings' : 'Current' }} - {{ acc.accountNumber }} (₹{{ acc.balance | number:'1.2-2' }})
+                </option>
+              }
+            </select>
+            <button class="pay-btn" [disabled]="!selectedAccounts()[bill.id]" (click)="markAsPaid(bill.id)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" style="margin-right: 6px; display: inline-block; vertical-align: middle;">
+                <path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Pay Now
+            </button>
+            @if (bill.status === 'PENDING') {
+            <button class="overdue-btn" (click)="markAsOverdue(bill.id)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" style="margin-right: 6px; display: inline-block; vertical-align: middle;">
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Mark Overdue
+            </button>
+            }
+          </div>
+          }
+          <button class="delete-btn" (click)="deleteBill(bill.id)" title="Delete bill">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+              <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      }
+    </div>
+    }
+  </div>
+</div>

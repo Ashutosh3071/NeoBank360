@@ -1,0 +1,497 @@
+/* ═══════════════════════════════════════════════
+   NeoBank360 — Redesigned Glassmorphic Navbar
+   ═══════════════════════════════════════════════ */
+
+/* ── Navbar Shell ─────────────────────────────── */
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+  background: rgba(10, 15, 28, 0.70);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.15),
+              inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              border-bottom-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.navbar:hover {
+  background: rgba(10, 15, 28, 0.78);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3),
+              0 0 20px rgba(0, 212, 255, 0.05),
+              inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ── Container ────────────────────────────────── */
+.navbar-container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 20px;
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  position: relative;
+}
+
+/* ── Brand ────────────────────────────────────── */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.brand-mark {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--gradient-primary);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.25),
+              inset 0 1px 1px rgba(255, 255, 255, 0.3);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+              box-shadow 0.4s ease;
+}
+
+/* Brand Shimmer Sweep Animation */
+.brand-mark::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 45%,
+    rgba(255, 255, 255, 0.35) 50%,
+    transparent 55%
+  );
+  transform: rotate(45deg);
+  transition: transform 0.6s ease;
+}
+
+.brand:hover .brand-mark::after {
+  transform: translate(50%, 50%) rotate(45deg);
+}
+
+.brand:hover .brand-mark {
+  transform: scale(1.08) rotate(-4deg);
+  box-shadow: 0 0 28px rgba(0, 212, 255, 0.45),
+              0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.brand-text {
+  color: var(--text-primary);
+  font-size: 19px;
+  font-weight: 850;
+  letter-spacing: -0.5px;
+  font-family: 'Outfit', sans-serif;
+  display: flex;
+  align-items: center;
+}
+
+.brand-360 {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 900;
+  margin-left: 2px;
+}
+
+/* ── Menu Toggle (Mobile Hamburger) ───────────── */
+.menu-toggle {
+  display: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 12px;
+  border-radius: var(--radius);
+  transition: background-color 0.25s ease;
+  border: 1px solid transparent;
+}
+
+.menu-toggle:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.hamburger-box {
+  width: 22px;
+  height: 16px;
+  display: block;
+  position: relative;
+}
+
+.hamburger-inner,
+.hamburger-inner::before,
+.hamburger-inner::after {
+  width: 22px;
+  height: 2px;
+  background-color: var(--text-secondary);
+  position: absolute;
+  border-radius: var(--radius-full);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              top 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hamburger-inner {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.hamburger-inner::before {
+  content: '';
+  top: -7px;
+  left: 0;
+}
+
+.hamburger-inner::after {
+  content: '';
+  top: 7px;
+  left: 0;
+}
+
+/* Hamburger Open States */
+.hamburger-inner.open {
+  background-color: transparent !important;
+}
+
+.hamburger-inner.open::before {
+  transform: rotate(45deg);
+  top: 0;
+  background-color: var(--text-primary);
+}
+
+.hamburger-inner.open::after {
+  transform: rotate(-45deg);
+  top: 0;
+  background-color: var(--text-primary);
+}
+
+/* ── Nav Links Container (Desktop) ────────────── */
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  flex-shrink: 1;
+  flex-wrap: nowrap;
+}
+
+/* ── Nav Separator ────────────────────────────── */
+.nav-separator {
+  width: 1px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 0 10px;
+  flex-shrink: 0;
+}
+
+/* ── Nav Link ─────────────────────────────────── */
+.nav-link {
+  text-decoration: none;
+  color: var(--text-secondary);
+  padding: 6px 11px;
+  border-radius: var(--radius-full);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  position: relative;
+  font-family: 'Inter', sans-serif;
+  border: 1px solid transparent;
+  flex-shrink: 0;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-link-icon {
+  font-size: 14px;
+  transition: transform 0.25s ease;
+}
+
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.03);
+}
+
+.nav-link:hover .nav-link-icon {
+  transform: translateY(-1px);
+}
+
+.nav-link:active {
+  transform: scale(0.97);
+}
+
+/* ── Active Link (Pill Glow) ──────────────────── */
+.active-link {
+  background: rgba(0, 212, 255, 0.08) !important;
+  border-color: rgba(0, 212, 255, 0.15) !important;
+  color: var(--primary) !important;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(0, 212, 255, 0.1),
+              inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.active-link:hover {
+  background: rgba(0, 212, 255, 0.12) !important;
+  border-color: rgba(0, 212, 255, 0.25) !important;
+  color: var(--primary) !important;
+}
+
+.active-link .nav-link-icon {
+  transform: scale(1.1);
+}
+
+/* ── Register Link (Call-To-Action) ───────────── */
+.nav-link-register {
+  background: var(--gradient-primary);
+  border: none;
+  color: #ffffff !important;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-link-register::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(255, 255, 255, 0.15);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.nav-link-register:hover::before {
+  opacity: 1;
+}
+
+.nav-link-register:hover {
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.45);
+  transform: translateY(-1px);
+}
+
+/* ── User Profile Glass Badge ─────────────────── */
+.nav-user {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+  margin-left: 2px;
+  flex-shrink: 1;
+  min-width: 0;
+  transition: all 0.25s ease;
+}
+
+.nav-user:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.user-glow-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--success);
+  box-shadow: 0 0 8px var(--success);
+  animation: glowPulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.user-email {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Logout Button ────────────────────────────── */
+.logout-btn {
+  border: none;
+  background: rgba(248, 113, 113, 0.04);
+  border: 1px solid rgba(248, 113, 113, 0.1);
+  color: var(--danger);
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.logout-btn:hover {
+  background: rgba(248, 113, 113, 0.12);
+  border-color: rgba(248, 113, 113, 0.25);
+  color: var(--danger);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(248, 113, 113, 0.15);
+}
+
+.logout-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.logout-icon {
+  font-size: 14px;
+  transition: transform 0.25s ease;
+}
+
+.logout-btn:hover .logout-icon {
+  transform: translate(2px, -2px);
+}
+
+/* ═══════════════════════════════════════════════
+   Responsive — Mobile (≤ 1100px Breakpoint)
+   ═══════════════════════════════════════════════ */
+@media (max-width: 1100px) {
+  .navbar {
+    overflow-x: visible;
+  }
+
+  .navbar-container {
+    padding: 0 20px;
+    min-height: 60px;
+    overflow: visible;
+  }
+
+  .menu-toggle {
+    display: block;
+  }
+
+  /* Smooth Slide & Fade Panel transition */
+  .nav-links {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    padding: 16px;
+    background: rgba(10, 15, 28, 0.94);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    
+    /* Absolute Positioning relative to navbar-container */
+    position: absolute;
+    top: 100%;
+    left: 16px;
+    right: 16px;
+    margin-top: 8px;
+    z-index: 999;
+    
+    /* Animation Off-state */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-12px) scale(0.97);
+    pointer-events: none;
+    transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                visibility 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Open-state triggers transition */
+  .nav-links.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+  }
+
+  .nav-separator {
+    width: 100%;
+    height: 1px;
+    margin: 8px 0;
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .nav-link {
+    width: 100%;
+    text-align: left;
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    font-size: 14.5px;
+    justify-content: flex-start;
+  }
+
+  .active-link {
+    background: rgba(0, 212, 255, 0.08) !important;
+    border-radius: 0 var(--radius) var(--radius) 0 !important;
+    box-shadow: none;
+    border: none !important;
+    border-left: 3px solid var(--primary) !important;
+  }
+
+  .nav-user {
+    width: 100%;
+    margin-left: 0;
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .logout-btn {
+    width: 100%;
+    margin-left: 0;
+    text-align: center;
+    justify-content: center;
+    padding: 12px 16px;
+    margin-top: 4px;
+    border: 1px solid rgba(248, 113, 113, 0.15);
+    border-radius: var(--radius);
+  }
+
+  .nav-link-register {
+    justify-content: center;
+  }
+}
+
+/* ── Small devices (≤ 400px) ──────────────────── */
+@media (max-width: 400px) {
+  .brand-text {
+    font-size: 17px;
+  }
+
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+    font-size: 11px;
+  }
+}

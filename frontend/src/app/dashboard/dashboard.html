@@ -1,0 +1,295 @@
+<div class="dashboard-page">
+  <div class="dashboard-container">
+    <!-- Header -->
+    <div class="dashboard-header">
+      <div>
+        <h1>NeoBank <span class="header-accent">Dashboard</span></h1>
+        <p class="subtitle">Manage your accounts, balances, and transfers</p>
+      </div>
+
+      <div class="header-actions">
+        <a routerLink="/profile" class="nav-link">
+          <span class="nav-link-icon">👤</span>
+          My Profile
+        </a>
+      </div>
+    </div>
+
+    <!-- Alerts -->
+    @if (successMessage()) {
+    <div class="alert success">
+      <span class="alert-icon">✓</span>
+      {{ successMessage() }}
+    </div>
+    } @if (errorMessage()) {
+    <div class="alert error">
+      <span class="alert-icon">✕</span>
+      {{ errorMessage() }}
+    </div>
+    }
+
+    <div class="dashboard-grid">
+      <!-- LEFT PANEL -->
+      <div class="left-panel">
+        <!-- =====================
+             CREATE ACCOUNT (customers only)
+        ====================== -->
+        @if (!isAdmin()) {
+        <section class="card">
+          <div class="card-title-row">
+            <span class="card-icon">🏦</span>
+            <div>
+              <h2>Create Account</h2>
+              <p class="card-subtitle">Open a new savings or current account.</p>
+            </div>
+          </div>
+
+          <form [formGroup]="createAccountForm" (ngSubmit)="onCreateAccount()" novalidate>
+            <div class="form-group">
+              <label for="accountType">Account Type</label>
+              <select id="accountType" formControlName="accountType">
+                <option value="SAVINGS">SAVINGS</option>
+                <option value="CURRENT">CURRENT</option>
+              </select>
+            </div>
+
+            <button type="submit" class="btn-primary" [disabled]="isCreating()">
+              {{ isCreating() ? 'Creating...' : 'Create Account' }}
+            </button>
+
+            <p class="info">
+              <span class="info-icon">ℹ</span>
+              New bank accounts require admin approval. Max 2 accounts allowed.
+            </p>
+          </form>
+        </section>
+        }
+
+        <!-- =====================
+             TRANSFER MONEY (customers only)
+        ====================== -->
+        @if (!isAdmin()) {
+        <section class="card">
+          <div class="card-title-row">
+            <span class="card-icon">💸</span>
+            <div>
+              <h2>Transfer Money</h2>
+              <p class="card-subtitle">Transfer funds from one of your approved accounts</p>
+            </div>
+          </div>
+
+          <form [formGroup]="transferForm" (ngSubmit)="onTransferMoney()" novalidate>
+            <!-- Source Account -->
+            <div class="form-group">
+              <label for="sourceAccountId">Source Account</label>
+              <select id="sourceAccountId" formControlName="sourceAccountId">
+                <option value="0" disabled>Select source account</option>
+
+                @for (account of accounts(); track account.id) {
+                <option [value]="account.id" [disabled]="!isAccountApproved(account)">
+                  {{ account.accountNumber }}
+                  — {{ account.accountType }} — {{ account.balance | currency : 'INR' }} ({{
+                  account.accountStatus
+                  }})
+                </option>
+                }
+              </select>
+            </div>
+
+            <!-- Warning -->
+            @if (getSelectedSourceAccount() && !canTransfer()) {
+            <div class="alert warning">
+              <span class="alert-icon">⚠</span>
+              This account is pending admin approval. Transfers are disabled.
+            </div>
+            }
+
+            <!-- Destination -->
+            <div class="form-group">
+              <label for="destinationAccountNumber">Destination Account Number</label>
+              <input id="destinationAccountNumber" formControlName="destinationAccountNumber"
+                placeholder="Enter destination account number" />
+            </div>
+
+            <!-- Amount -->
+            <div class="form-group">
+              <label for="transferAmount">Amount</label>
+              <input id="transferAmount" type="number" min="0.01" step="0.01" formControlName="amount" />
+            </div>
+
+            <!-- Description -->
+            <div class="form-group">
+              <label for="transferDescription">Description</label>
+              <input id="transferDescription" formControlName="description" placeholder="Optional note" />
+            </div>
+
+            <button type="submit" class="btn-primary" [disabled]="isTransferring() || !canTransfer()">
+              {{ isTransferring() ? 'Transferring...' : 'Transfer Money' }}
+            </button>
+          </form>
+        </section>
+        }
+      </div>
+
+      <!-- =====================
+           RIGHT PANEL – ACCOUNTS
+      ====================== -->
+      <section class="card accounts-card">
+        <div class="card-header">
+          <div>
+            <h2>My Accounts</h2>
+            <p class="card-subtitle">Your owned accounts</p>
+          </div>
+
+          <button type="button" class="secondary-btn" (click)="loadAccounts()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" style="margin-right: 6px; display: inline-block; vertical-align: middle;">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 11-.57-8.38l5.67-5.67" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Refresh
+          </button>
+        </div>
+
+        @if (isLoading()) {
+        <div class="empty-state">
+          <div class="loading-spinner"></div>
+          Loading accounts...
+        </div>
+        } @else if (accounts().length === 0) {
+        <div class="empty-state">
+          <span class="empty-icon">📂</span>
+          No accounts found. Create your first account.
+        </div>
+        } @else {
+        <div class="account-list">
+          @for (account of accounts(); track account.id) {
+          <div class="account-card" [class.savings]="account.accountType === 'SAVINGS'"
+            [class.current]="account.accountType === 'CURRENT'">
+            <div class="account-card-bg"></div>
+
+            <div class="account-card-top">
+              <div>
+                <span class="account-type-badge">{{ account.accountType }}</span>
+                <p class="account-number">{{ account.accountNumber }}</p>
+              </div>
+
+              <span class="status-badge" [class.pending]="account.accountStatus === 'PENDING_APPROVAL'"
+                [class.approved]="account.accountStatus === 'APPROVED'"
+                [class.rejected]="account.accountStatus === 'REJECTED'">
+                {{ account.accountStatus }}
+              </span>
+            </div>
+
+            <div class="account-meta">
+              <div class="meta-item">
+                <span class="meta-label">Balance</span>
+                <span class="meta-value balance">
+                  {{ account.balance | currency : 'INR' }}
+                </span>
+              </div>
+
+              <div class="meta-item">
+                <span class="meta-label">Created</span>
+                <span class="meta-value">
+                  {{ account.createdAt | date : 'mediumDate' }}
+                </span>
+              </div>
+            </div>
+
+            <div class="account-card-footer">
+              <span class="active-indicator" [class.active]="account.isActive">
+                {{ account.isActive ? 'Active' : 'Inactive' }}
+              </span>
+              <div class="account-actions">
+                @if (isAccountApproved(account)) {
+                <button type="button" class="debit-btn" (click)="openDebitModal(account)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" style="margin-right: 6px; display: inline-block; vertical-align: middle;">
+                    <path d="M12 2v20m0-20L5 9m7-7l7 7" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Withdraw
+                </button>
+                }
+                <a [routerLink]="['/accounts', account.id, 'transactions']" class="action-link">
+                  View Transactions →
+                </a>
+              </div>
+            </div>
+          </div>
+          }
+        </div>
+        }
+      </section>
+
+      <!-- =====================
+           BALANCE CHART
+      ====================== -->
+      @if (accounts().length > 0) {
+      <section class="card chart-card">
+        <div class="card-title-row">
+          <span class="card-icon">📊</span>
+          <div>
+            <h2>Balance Overview</h2>
+            <p class="card-subtitle">Visual breakdown of your account balances</p>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas #balanceChart></canvas>
+        </div>
+      </section>
+      }
+    </div>
+  </div>
+</div>
+<!-- ✅ DEBIT (Withdraw) Modal -->
+@if (showDebitModal() && selectedAccountForDebit()) {
+<div class="modal-backdrop" (click)="closeDebitModal()">
+  <div class="modal-box" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18" style="margin-right: 8px; display: inline-block; vertical-align: middle;">
+          <path d="M12 2v20m0-20L5 9m7-7l7 7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Withdraw from Account
+      </h3>
+      <button type="button" class="modal-close" (click)="closeDebitModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-account-info">
+        <div class="modal-info-row">
+          <span class="modal-info-label">Account</span>
+          <span class="modal-info-value mono">{{ selectedAccountForDebit()!.accountNumber }}</span>
+        </div>
+        <div class="modal-info-row">
+          <span class="modal-info-label">Type</span>
+          <span class="modal-info-value">{{ selectedAccountForDebit()!.accountType }}</span>
+        </div>
+        <div class="modal-info-row">
+          <span class="modal-info-label">Available Balance</span>
+          <span class="modal-info-value balance-highlight">
+            {{ selectedAccountForDebit()!.balance | currency : 'INR' }}
+          </span>
+        </div>
+      </div>
+      <div class="modal-form-group">
+        <label for="debitAmount">Amount (₹)</label>
+        <input id="debitAmount" type="number" min="0.01" step="0.01" [value]="debitAmount() !== null ? debitAmount() : ''"
+          (input)="updateDebitAmount($event)" placeholder="Enter amount to withdraw" />
+      </div>
+      <div class="modal-form-group">
+        <label for="debitDesc">Description (optional)</label>
+        <input id="debitDesc" type="text" [value]="debitDescription()"
+          (input)="debitDescription.set($any($event.target).value)" placeholder="e.g. Rent, Shopping" />
+      </div>
+      @if (errorMessage()) {
+      <div class="modal-error">{{ errorMessage() }}</div>
+      }
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary-modal" (click)="closeDebitModal()">Cancel</button>
+      <button type="button" class="btn-debit-confirm" [disabled]="isDebiting() || debitAmount() === null || debitAmount()! <= 0"
+        (click)="onDebit()">
+        {{ isDebiting() ? 'Processing...' : 'Confirm Withdrawal' }}
+      </button>
+    </div>
+  </div>
+</div>
+}

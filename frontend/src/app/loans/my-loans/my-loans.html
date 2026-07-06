@@ -1,0 +1,98 @@
+<div class="my-loans-page">
+  <div class="my-loans-container">
+    <div class="page-header">
+      <div>
+        <h1>My Active <span class="header-accent">Loans</span></h1>
+        <p class="subtitle">View outstanding principal, EMIs, and track repayment schedules</p>
+      </div>
+      <div class="header-actions">
+        <a routerLink="/loans/apply" class="btn-primary">
+          📝 Apply New Loan
+        </a>
+      </div>
+    </div>
+
+    <!-- Alert for error -->
+    @if (errorMessage()) {
+    <div class="alert error">
+      <span class="alert-icon">✕</span>
+      {{ errorMessage() }}
+    </div>
+    }
+
+    <!-- Loading state -->
+    @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Fetching active loan accounts...</p>
+    </div>
+    } @else if (accounts().length === 0) {
+    <!-- Empty state -->
+    <div class="empty-state glass-panel animated fadeInUp">
+      <span class="empty-icon">🏦</span>
+      <h3>No Active Loan Accounts</h3>
+      <p>You do not have any active, disbursed loans with NeoBank360 at this time.</p>
+      <a routerLink="/loans/apply" class="btn-primary btn-cta">
+        Get Started & Apply
+      </a>
+    </div>
+    } @else {
+    <!-- Active accounts list -->
+    <div class="loans-grid">
+      @for (acc of accounts(); track acc.id) {
+      <div class="loan-card glass-panel animated fadeInUp">
+        <div class="card-glow"></div>
+        
+        <div class="card-header">
+          <div class="account-num-block">
+            <span class="label">ACCOUNT NUMBER</span>
+            <h3 class="account-number mono">{{ formatAccountNumber(acc.id) }}</h3>
+          </div>
+          <span class="status-badge active-badge">ACTIVE</span>
+        </div>
+
+        <div class="card-body">
+          <div class="facility-name-row">
+            <span class="icon">💼</span>
+            <span class="facility-name">{{ acc.productName }}</span>
+          </div>
+
+          <div class="metrics-grid">
+            <div class="metric-item">
+              <span class="metric-label">Disbursed Principal</span>
+              <span class="metric-value highlight-cyan">{{ acc.principalAmount | currency : 'INR' : 'symbol' : '1.2-2' }}</span>
+            </div>
+            
+            <div class="metric-item">
+              <span class="metric-label">Monthly EMI</span>
+              <span class="metric-value highlight-emerald">{{ acc.emiAmount | currency : 'INR' : 'symbol' : '1.2-2' }}</span>
+            </div>
+
+            <div class="metric-item">
+              <span class="metric-label">Interest Rate</span>
+              <span class="metric-value">{{ acc.annualInterestRate }}% p.a.</span>
+            </div>
+
+            <div class="metric-item">
+              <span class="metric-label">Tenure Duration</span>
+              <span class="metric-value">{{ acc.tenureMonths }} Months</span>
+            </div>
+          </div>
+
+          <div class="disbursement-info">
+            <span>Disbursed On:</span>
+            <strong>{{ acc.disbursedAt | date : 'mediumDate' }}</strong>
+          </div>
+        </div>
+
+        <div class="card-footer">
+          <a [routerLink]="['/loans', acc.id, 'repayments']" class="btn-view-schedule">
+            📅 View Repayments & Pay EMI
+          </a>
+        </div>
+      </div>
+      }
+    </div>
+    }
+  </div>
+</div>

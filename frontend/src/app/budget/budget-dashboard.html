@@ -1,0 +1,169 @@
+<div class="page">
+  <div class="container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1>Budget Management</h1>
+      <p class="subtitle">Plan and track your monthly spending by category</p>
+    </div>
+
+    <!-- Alerts -->
+    @if (successMessage()) {
+    <div class="alert success">
+      <svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+      </svg>
+      <span>{{ successMessage() }}</span>
+    </div>
+    } @if (errorMessage()) {
+    <div class="alert error">
+      <svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+      </svg>
+      <span>{{ errorMessage() }}</span>
+    </div>
+    }
+
+    <!-- Main Grid -->
+    <div class="grid">
+      <!-- Create Budget Card -->
+      <section class="card create-card">
+        <div class="card-title-row">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+              <path d="M12 5v14M5 12h14" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h2>Create Budget</h2>
+        </div>
+
+        <form [formGroup]="createForm" (ngSubmit)="onCreateBudget()" novalidate>
+          <div class="form-group">
+            <label for="category">Category</label>
+            <div class="select-wrapper">
+              <select id="category" formControlName="category">
+                <option value="" disabled>Select category</option>
+                @for (cat of categories; track cat) {
+                <option [value]="cat">{{ cat }}</option>
+                }
+              </select>
+              <svg class="select-chevron" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="budgetMonth">Month</label>
+            <input id="budgetMonth" type="month" formControlName="budgetMonth" />
+          </div>
+
+          <div class="form-group">
+            <label for="limitAmount">Limit Amount (₹)</label>
+            <input
+              id="limitAmount"
+              type="number"
+              min="0.01"
+              step="0.01"
+              formControlName="limitAmount"
+              placeholder="e.g. 5000"
+            />
+          </div>
+
+          <button type="submit" class="submit-btn" [disabled]="isCreating() || createForm.invalid">
+            @if (isCreating()) {
+              <span class="spinner"></span>
+              <span>Creating...</span>
+            } @else {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" style="margin-right: 6px; display: inline-block; vertical-align: middle;">
+                <path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span>Create Budget</span>
+            }
+          </button>
+        </form>
+      </section>
+
+      <!-- Budget Summary Card -->
+      <section class="card budget-list-card">
+        <div class="card-header">
+          <div class="card-title-row">
+            <div class="card-icon secondary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+                <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+                <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+                <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+                <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+              </svg>
+            </div>
+            <h2>This Month's Budgets</h2>
+          </div>
+          <button type="button" class="refresh-btn" (click)="loadBudgets()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" style="margin-right: 6px; display: inline-block; vertical-align: middle;">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 11-.57-8.38l5.67-5.67" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Refresh
+          </button>
+        </div>
+
+        @if (isLoading()) {
+        <div class="empty-state">
+          <div class="loading-spinner"></div>
+          <p>Loading budgets...</p>
+        </div>
+        } @else if (budgets().length === 0) {
+        <div class="empty-state">
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+            <path d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p>No budgets for this month.</p>
+          <span class="empty-hint">Create one to get started.</span>
+        </div>
+        } @else {
+        <div class="budget-list">
+          @for (budget of budgets(); track budget.id) {
+          <div class="budget-item">
+            <div class="budget-item-header">
+              <h3>{{ budget.category }}</h3>
+              <button class="delete-btn" (click)="deleteBudget(budget.id)" title="Delete budget">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </div>
+            <div class="budget-stats">
+              <div class="stat">
+                <span class="stat-label">Limit</span>
+                <span class="stat-value">{{ budget.limitAmount | currency : 'INR' }}</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Spent</span>
+                <span class="stat-value">{{ budget.spent | currency : 'INR' }}</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Remaining</span>
+                <span class="stat-value">{{ budget.remaining | currency : 'INR' }}</span>
+              </div>
+            </div>
+            <div class="progress-bar-container">
+              <div
+                class="progress-bar"
+                [class]="getUtilizationColor(budget.utilizationPercentage)"
+                [style.width.%]="
+                  budget.utilizationPercentage > 100 ? 100 : budget.utilizationPercentage
+                "
+              ></div>
+            </div>
+            <span
+              class="utilization-label"
+              [class]="getUtilizationColor(budget.utilizationPercentage)"
+            >
+              {{ budget.utilizationPercentage | number : '1.1-1' }}% utilized
+            </span>
+          </div>
+          }
+        </div>
+        }
+      </section>
+    </div>
+  </div>
+</div>

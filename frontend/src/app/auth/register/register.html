@@ -1,0 +1,193 @@
+<div class="auth-page">
+  <!-- Left Branding Panel -->
+  <div class="auth-panel">
+    <div class="panel-content">
+      <div class="panel-logo">
+        <span class="logo-mark">NB</span>
+        <span class="logo-text">NeoBank<span class="logo-360">360</span></span>
+      </div>
+
+      <div class="panel-card">
+        <div class="mini-card">
+          <div class="mini-card-shine"></div>
+          <div class="mini-chip"></div>
+          <div class="mini-number">•••• •••• •••• 4829</div>
+          <div class="mini-name">YOUR NAME HERE</div>
+        </div>
+      </div>
+
+      <h2>Join the future<br />of banking.</h2>
+      <p>Open your account in minutes with a seamless digital-first experience.</p>
+
+      <div class="panel-features">
+        <div class="panel-feature"><span>⚡</span> Instant account activation</div>
+        <div class="panel-feature"><span>🔐</span> Bank-grade security</div>
+        <div class="panel-feature"><span>💳</span> Virtual debit card on signup</div>
+      </div>
+    </div>
+
+    <div class="panel-shapes">
+      <div class="p-shape p-shape-1"></div>
+      <div class="p-shape p-shape-2"></div>
+      <div class="p-shape p-shape-3"></div>
+    </div>
+  </div>
+
+  <!-- Right Form Panel -->
+  <div class="auth-form-panel">
+    <div class="auth-card">
+      <div class="auth-card-header">
+        <h1>Create Account</h1>
+        <p class="subtitle">Fill in your details to get started</p>
+      </div>
+
+      @if (successMessage()) {
+      <div class="alert success">
+        <span class="alert-icon">✅</span>
+        <span>{{ successMessage() }}</span>
+      </div>
+      } @if (errorMessage()) {
+      <div class="alert error">
+        <span class="alert-icon">⚠️</span>
+        <span>{{ errorMessage() }}</span>
+      </div>
+      } @if (fieldErrors().length > 0) {
+      <div class="alert error">
+        <ul>
+          @for (err of fieldErrors(); track err) {
+          <li>{{ err }}</li>
+          }
+        </ul>
+      </div>
+      }
+
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" novalidate>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="fullName">Full Name</label>
+            <div class="input-wrapper">
+              <span class="input-icon">👤</span>
+              <input id="fullName" type="text" formControlName="fullName" placeholder="John Doe" />
+            </div>
+            @if (fullName?.touched && fullName?.invalid) {
+            <small class="validation-error">
+              @if (fullName?.errors?.['required']) { Full name is required. } @if
+              (fullName?.errors?.['minlength']) { At least 3 characters. }
+            </small>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email</label>
+            <div class="input-wrapper">
+              <span class="input-icon">✉️</span>
+              <input id="email" type="email" formControlName="email" placeholder="you@email.com" />
+            </div>
+            @if (email?.touched && email?.invalid) {
+            <small class="validation-error">
+              @if (email?.errors?.['required']) { Email is required. } @if
+              (email?.errors?.['email']) { Enter a valid email. }
+            </small>
+            }
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="aadhaarNumber">Aadhaar Number</label>
+            <div class="input-wrapper">
+              <span class="input-icon">🆔</span>
+              <input
+                id="aadhaarNumber"
+                type="text"
+                formControlName="aadhaarNumber"
+                maxlength="12"
+                inputmode="numeric"
+                placeholder="12-digit number"
+              />
+            </div>
+            @if (aadhaarNumber?.touched && aadhaarNumber?.invalid) {
+            <small class="validation-error">
+              @if (aadhaarNumber?.errors?.['required']) { Aadhaar is required. } @if
+              (aadhaarNumber?.errors?.['pattern']) { Must be exactly 12 digits. }
+            </small>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="panNumber">PAN Number</label>
+            <div class="input-wrapper">
+              <span class="input-icon">📄</span>
+              <input
+                id="panNumber"
+                type="text"
+                formControlName="panNumber"
+                maxlength="10"
+                placeholder="ABCDE1234F"
+                (input)="onPanInput()"
+              />
+            </div>
+            @if (panNumber?.touched && panNumber?.invalid) {
+            <small class="validation-error">
+              @if (panNumber?.errors?.['required']) { PAN is required. } @if
+              (panNumber?.errors?.['pattern']) { Format: ABCDE1234F }
+            </small>
+            }
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="password">Password</label>
+            <div class="input-wrapper">
+              <span class="input-icon">🔒</span>
+              <input
+                id="password"
+                type="password"
+                formControlName="password"
+                placeholder="Min 8 characters"
+              />
+            </div>
+            @if (password?.touched && password?.invalid) {
+            <small class="validation-error">
+              @if (password?.errors?.['required']) { Password is required. } @if
+              (password?.errors?.['minlength']) { At least 8 characters. } @if
+              (password?.errors?.['pattern']) { Needs upper, lower, number & special char. }
+            </small>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <div class="input-wrapper">
+              <span class="input-icon">🔒</span>
+              <input
+                id="confirmPassword"
+                type="password"
+                formControlName="confirmPassword"
+                placeholder="Re-enter password"
+              />
+            </div>
+            @if (confirmPassword?.touched && confirmPassword?.errors?.['required']) {
+            <small class="validation-error">Confirm password is required.</small>
+            } @if (registerForm.touched && registerForm.errors?.['passwordMismatch']) {
+            <small class="validation-error">Passwords do not match.</small>
+            }
+          </div>
+        </div>
+
+        <button class="submit-btn" type="submit" [disabled]="isSubmitting()">
+          @if (isSubmitting()) {
+          <span class="spinner"></span> Creating account... } @else { Create Account
+          <span class="btn-arrow">→</span>
+          }
+        </button>
+      </form>
+
+      <p class="switch-auth">
+        Already have an account?
+        <a routerLink="/login">Sign in</a>
+      </p>
+    </div>
+  </div>
+</div>

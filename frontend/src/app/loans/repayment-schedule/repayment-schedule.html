@@ -1,0 +1,196 @@
+<div class="schedule-page">
+  <div class="schedule-container">
+    <div class="page-header">
+      <div>
+        <h1>Repayment <span class="header-accent">Schedule</span></h1>
+        <p class="subtitle">Amortization plan and payment interface for Account: <strong class="mono highlight-white">{{ formatAccountNumber(loanAccountId()) }}</strong></p>
+      </div>
+      <div class="header-actions">
+        <a routerLink="/loans/my-loans" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" style="margin-right: 6px; display: inline-block; vertical-align: middle;">
+            <path d="M19 12H5m0 0l7-7m-7 7l7 7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Back to My Loans
+        </a>
+      </div>
+    </div>
+
+    <!-- Alert banners -->
+    @if (successMessage()) {
+    <div class="alert success">
+      <span class="alert-icon">✓</span>
+      {{ successMessage() }}
+    </div>
+    }
+    @if (errorMessage()) {
+    <div class="alert error">
+      <span class="alert-icon">✕</span>
+      {{ errorMessage() }}
+    </div>
+    }
+
+    <!-- Filtering & Controls -->
+    <div class="controls-panel glass-panel">
+      <div class="filter-group">
+        <span class="filter-label">Filter Status:</span>
+        <button class="filter-btn" [class.active]="activeStatusFilter() === ''" (click)="setFilter('')">
+          All
+        </button>
+        <button class="filter-btn pending" [class.active]="activeStatusFilter() === 'PENDING'" (click)="setFilter('PENDING')">
+          Pending
+        </button>
+        <button class="filter-btn paid" [class.active]="activeStatusFilter() === 'PAID'" (click)="setFilter('PAID')">
+          Paid
+        </button>
+        <button class="filter-btn overdue" [class.active]="activeStatusFilter() === 'OVERDUE'" (click)="setFilter('OVERDUE')">
+          Overdue
+        </button>
+      </div>
+
+      <div class="total-summary">
+        Total Installments: <strong>{{ totalElements() }}</strong>
+      </div>
+    </div>
+
+    <!-- Table content -->
+    @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Fetching schedule details...</p>
+    </div>
+    } @else if (repayments().length === 0) {
+    <div class="empty-state glass-panel">
+      <span class="empty-icon">📅</span>
+      <h3>No Installments Found</h3>
+      <p>No repayment items match the current status filter selection.</p>
+    </div>
+    } @else {
+    <div class="table-wrapper glass-panel animated fadeInUp">
+      <table>
+        <thead>
+          <tr>
+            <th>Installment</th>
+            <th>Due Date</th>
+            <th>EMI Amount</th>
+            <th>Principal Component</th>
+            <th>Interest Component</th>
+            <th>Status</th>
+            <th>Paid At</th>
+            <th class="action-col">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (rep of repayments(); track rep.id) {
+          <tr>
+            <td class="mono font-semibold">#{{ rep.instalmentNumber }}</td>
+            <td>{{ rep.dueDate | date : 'mediumDate' }}</td>
+            <td class="amount emi-val font-semibold">{{ rep.emiAmount | currency : 'INR' : 'symbol' : '1.2-2' }}</td>
+            <td class="amount">{{ rep.principalComponent | currency : 'INR' : 'symbol' : '1.2-2' }}</td>
+            <td class="amount">{{ rep.interestComponent | currency : 'INR' : 'symbol' : '1.2-2' }}</td>
+            <td>
+              <span
+                class="status-pill"
+                [class.status-paid]="rep.paymentStatus === 'PAID'"
+                [class.status-pending]="rep.paymentStatus === 'PENDING'"
+                [class.status-overdue]="rep.paymentStatus === 'OVERDUE'"
+              >
+                {{ rep.paymentStatus }}
+              </span>
+            </td>
+            <td>
+              @if (rep.paidAt) {
+                <span class="paid-date">{{ rep.paidAt | date : 'short' }}</span>
+              } @else {
+                <span class="text-muted">—</span>
+              }
+            </td>
+            <td class="action-col">
+              @if (rep.paymentStatus !== 'PAID') {
+              <button
+                class="btn-pay"
+                [disabled]="isPaying() !== null"
+                (click)="payInstallment(rep.id)"
+              >
+                @if (isPaying() === rep.id) {
+                  <span>Paying...</span>
+                } @else {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="14" height="14" style="margin-right: 6px; display: inline-block; vertical-align: middle;">
+                    <rect x="2" y="5" width="20" height="14" rx="2" ry="2"/>
+                    <path d="M2 10h20M6 14h2M10 14h4" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <span>Pay Now</span>
+                }
+              </button>
+              } @else {
+              <span class="paid-check">✓ Completed</span>
+              }
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages() > 1) {
+    <div class="pagination">
+      <button class="pag-btn" [disabled]="currentPage() === 0" (click)="changePage(-1)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12" style="display: inline-block; vertical-align: middle; margin-right: 4px;">
+          <path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Prev
+      </button>
+      <span class="pag-info">
+        Page <strong>{{ currentPage() + 1 }}</strong> of <strong>{{ totalPages() }}</strong>
+      </span>
+      <button class="pag-btn" [disabled]="currentPage() >= totalPages() - 1" (click)="changePage(1)">
+        Next
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12" style="display: inline-block; vertical-align: middle; margin-left: 4px;">
+          <path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+    }
+    }
+  </div>
+
+  <!-- Account Selection Modal for EMI Debit -->
+  @if (showAccountModal()) {
+  <div class="modal-backdrop" (click)="closeAccountModal()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="18" height="18" style="margin-right: 8px; display: inline-block; vertical-align: middle;">
+            <rect x="2" y="5" width="20" height="14" rx="2" ry="2"/>
+            <path d="M2 10h20M6 14h2M10 14h4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Select Account for Payment
+        </h3>
+        <button type="button" class="modal-close" (click)="closeAccountModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-subtitle">Choose the account from which the monthly EMI will be debited:</p>
+        <div class="modal-form-group">
+          <label for="debitAccount">Debit From Account</label>
+          <select id="debitAccount" [value]="selectedAccountId() || ''" (change)="selectedAccountId.set(+$any($event.target).value)">
+            @for (account of userAccounts(); track account.id) {
+              <option [value]="account.id">
+                {{ account.accountNumber }} — {{ account.accountType }} — Balance: {{ account.balance | currency : 'INR' }}
+              </option>
+            }
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary-modal" (click)="closeAccountModal()">Cancel</button>
+        <button type="button" class="btn-debit-confirm" [disabled]="!selectedAccountId()" (click)="confirmInstallmentPayment()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" style="margin-right: 6px; display: inline-block; vertical-align: middle;">
+            <path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Confirm & Pay
+        </button>
+      </div>
+    </div>
+  </div>
+  }
+</div>

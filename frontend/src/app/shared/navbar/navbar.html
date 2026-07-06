@@ -1,0 +1,167 @@
+<nav class="navbar">
+  <div class="navbar-container">
+    <!-- Brand Logo -->
+    <a
+      [routerLink]="isLoggedIn() && isAdmin() ? '/admin/dashboard' : '/dashboard'"
+      class="brand"
+      (click)="closeMenu()"
+    >
+      <span class="brand-mark">NB</span>
+      <span class="brand-text">NeoBank<span class="brand-360">360</span></span>
+    </a>
+
+    <!-- Premium Morphing Hamburger Menu Button -->
+    <button 
+      class="menu-toggle" 
+      type="button" 
+      (click)="toggleMenu()" 
+      aria-label="Toggle Navigation"
+    >
+      <span class="hamburger-box">
+        <span class="hamburger-inner" [class.open]="menuOpen()"></span>
+      </span>
+    </button>
+
+    <!-- Navigation Links Panel -->
+    <div class="nav-links" [class.open]="menuOpen()">
+      @if (isLoggedIn()) {
+        @if (!isAdmin()) {
+          <a
+            routerLink="/dashboard"
+            routerLinkActive="active-link"
+            class="nav-link"
+            (click)="closeMenu()"
+          >
+            <span class="nav-link-icon">📊</span>
+            Dashboard
+          </a>
+          <a
+            routerLink="/insights"
+            routerLinkActive="active-link"
+            class="nav-link"
+            (click)="closeMenu()"
+          >
+            <span class="nav-link-icon">📈</span>
+            Insights
+          </a>
+          <a 
+            routerLink="/budget" 
+            routerLinkActive="active-link" 
+            class="nav-link" 
+            (click)="closeMenu()"
+          >
+            <span class="nav-link-icon">💰</span>
+            Budget
+          </a>
+          <a 
+            routerLink="/bills" 
+            routerLinkActive="active-link" 
+            class="nav-link" 
+            (click)="closeMenu()"
+          >
+            <span class="nav-link-icon">📄</span>
+            Bills
+          </a>
+          <a
+            routerLink="/rewards"
+            routerLinkActive="active-link"
+            class="nav-link"
+            (click)="closeMenu()"
+          >
+            <span class="nav-link-icon">🎁</span>
+            Rewards
+          </a>
+          <a
+            routerLink="/loans/apply"
+            routerLinkActive="active-link"
+            class="nav-link"
+            (click)="closeMenu()"
+          >
+            <span class="nav-link-icon">📝</span>
+            Apply Loan
+          </a>
+          <a
+            routerLink="/loans/my-loans"
+            routerLinkActive="active-link"
+            class="nav-link"
+            (click)="closeMenu()"
+          >
+            <span class="nav-link-icon">🏦</span>
+            My Loans
+          </a>
+        }
+        
+        @if (isAdmin()) {
+          <a
+            routerLink="/admin/dashboard"
+            routerLinkActive="active-link"
+            class="nav-link"
+            (click)="closeMenu()"
+          >
+            <span class="nav-link-icon">⚙️</span>
+            Admin Panel
+          </a>
+          <a
+            routerLink="/admin/loan-products"
+            routerLinkActive="active-link"
+            class="nav-link"
+            (click)="closeMenu()"
+          >
+            <span class="nav-link-icon">📋</span>
+            Loan Products
+          </a>
+          <a
+            routerLink="/admin/loan-decisions"
+            routerLinkActive="active-link"
+            class="nav-link"
+            (click)="closeMenu()"
+          >
+            <span class="nav-link-icon">⚖️</span>
+            Loan Decisions
+          </a>
+        }
+
+        <a
+          routerLink="/profile"
+          routerLinkActive="active-link"
+          class="nav-link"
+          (click)="closeMenu()"
+        >
+          <span class="nav-link-icon">👤</span>
+          Profile
+        </a>
+
+        <div class="nav-separator"></div>
+
+        <!-- User Info Pill -->
+        <div class="nav-user">
+          <span class="user-glow-dot"></span>
+          <span class="user-email" [title]="getUserEmail() || ''">{{ getUserEmail() }}</span>
+        </div>
+
+        <!-- Logout Action -->
+        <button class="logout-btn" type="button" (click)="logout()">
+          <span class="logout-icon">↗</span>
+          Logout
+        </button>
+      } @else {
+        <a 
+          routerLink="/login" 
+          routerLinkActive="active-link" 
+          class="nav-link" 
+          (click)="closeMenu()"
+        >
+          Login
+        </a>
+        <a
+          routerLink="/register"
+          routerLinkActive="active-link"
+          class="nav-link nav-link-register"
+          (click)="closeMenu()"
+        >
+          Register
+        </a>
+      }
+    </div>
+  </div>
+</nav>

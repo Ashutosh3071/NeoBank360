@@ -1,0 +1,315 @@
+<div class="loans-page">
+  <div class="loans-container">
+    <div class="page-header">
+      <div>
+        <h1>Apply for a <span class="header-accent">Loan</span></h1>
+        <p class="subtitle">Secure, fast, and transparent credit facilities tailored for you</p>
+      </div>
+      <div class="header-actions">
+        <a routerLink="/dashboard" class="nav-link">
+          <span class="nav-link-icon">📊</span> Dashboard
+        </a>
+      </div>
+    </div>
+
+    <!-- Alert Banners -->
+    @if (successMessage()) {
+    <div class="alert success">
+      <span class="alert-icon">✓</span>
+      {{ successMessage() }}
+    </div>
+    }
+    @if (errorMessage()) {
+    <div class="alert error">
+      <span class="alert-icon">✕</span>
+      {{ errorMessage() }}
+    </div>
+    }
+
+    <!-- Stepper Navigation -->
+    <div class="stepper">
+      <div class="step-item" [class.active]="currentStep() >= 1">
+        <span class="step-num">1</span>
+        <span class="step-label">Select Product</span>
+      </div>
+      <div class="step-line" [class.active]="currentStep() >= 2"></div>
+      <div class="step-item" [class.active]="currentStep() >= 2">
+        <span class="step-num">2</span>
+        <span class="step-label">Amount & Tenure</span>
+      </div>
+      <div class="step-line" [class.active]="currentStep() >= 3"></div>
+      <div class="step-item" [class.active]="currentStep() >= 3">
+        <span class="step-num">3</span>
+        <span class="step-label">Review & Submit</span>
+      </div>
+    </div>
+
+    <!-- MAIN FORM -->
+    <form [formGroup]="loanForm" (ngSubmit)="onSubmit()" novalidate>
+
+      <!-- STEP 1: Product Selection -->
+      @if (currentStep() === 1) {
+      <div class="step-content animated fadeInUp">
+        <h2 class="section-title">Step 1: Choose a Loan Product</h2>
+        <p class="section-desc">Select from our low-interest structured credit facilities below:</p>
+
+        @if (isLoading()) {
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Fetching available credit products...</p>
+        </div>
+        } @else if (products().length === 0) {
+        <div class="empty-state">
+          <span class="empty-icon">🏦</span>
+          <h3>No Loan Products Available</h3>
+          <p>There are no active loan products configured at the moment. Please contact support.</p>
+        </div>
+        } @else {
+        <div class="products-grid">
+          @for (prod of products(); track prod.id) {
+          <div class="product-card" [class.selected]="selectedProduct()?.id === prod.id" (click)="selectProductCard(prod)">
+            <div class="card-glow"></div>
+            <div class="product-icon">
+              @if (prod.productName.toLowerCase().includes('personal')) { 👤 }
+              @else if (prod.productName.toLowerCase().includes('home')) { 🏠 }
+              @else if (prod.productName.toLowerCase().includes('auto')) { 🚗 }
+              @else { 🏦 }
+            </div>
+            <h3>{{ prod.productName }}</h3>
+            <div class="product-rate">
+              <span class="rate-value">{{ prod.annualInterestRate }}%</span>
+              <span class="rate-label">p.a. Interest</span>
+            </div>
+            <div class="product-details">
+              <div class="detail-row">
+                <span>Min Principal:</span>
+                <strong>{{ prod.minAmount | currency : 'INR' : 'symbol' : '1.0-0' }}</strong>
+              </div>
+              <div class="detail-row">
+                <span>Max Principal:</span>
+                <strong>{{ prod.maxAmount | currency : 'INR' : 'symbol' : '1.0-0' }}</strong>
+              </div>
+              <div class="detail-row">
+                <span>Tenures:</span>
+                <strong>{{ prod.allowedTenures }} Months</strong>
+              </div>
+            </div>
+            <button type="button" class="btn-select-product">Select & Continue</button>
+          </div>
+          }
+        </div>
+        }
+      </div>
+      }
+
+      <!-- STEP 2: Configure Amount & Tenure -->
+      @if (currentStep() === 2) {
+      <div class="step-content animated fadeInUp">
+        <div class="config-container">
+          <div class="form-panel">
+            <h2 class="section-title">Step 2: Amount & Duration</h2>
+            <p class="section-desc">Specify how much you need and the tenure to repay.</p>
+
+            <div class="selected-product-summary">
+              <span class="summary-label">Selected Facility:</span>
+              <span class="summary-value">{{ selectedProduct()?.productName }} @ {{ selectedProduct()?.annualInterestRate }}% p.a.</span>
+            </div>
+
+            <!-- Requested Amount Field -->
+            <div class="form-group">
+              <label for="requestedAmount">Requested Amount (₹)</label>
+              <div class="input-wrapper">
+                <span class="input-prefix">₹</span>
+                <input
+                  type="number"
+                  id="requestedAmount"
+                  formControlName="requestedAmount"
+                  placeholder="Enter amount"
+                  class="form-control"
+                />
+              </div>
+              @if (selectedProduct()) {
+              <div class="limit-hints">
+                <span>Min: {{ selectedProduct()!.minAmount | currency : 'INR' : 'symbol' : '1.0-0' }}</span>
+                <span>Max: {{ selectedProduct()!.maxAmount | currency : 'INR' : 'symbol' : '1.0-0' }}</span>
+              </div>
+              }
+              @if (loanForm.get('requestedAmount')?.touched && loanForm.get('requestedAmount')?.invalid) {
+              <div class="error-hint">
+                @if (loanForm.get('requestedAmount')?.errors?.['required']) { Amount is required. }
+                @if (loanForm.get('requestedAmount')?.errors?.['min']) { Amount must be at least {{ selectedProduct()?.minAmount | currency : 'INR' : 'symbol' : '1.0-0' }}. }
+                @if (loanForm.get('requestedAmount')?.errors?.['max']) { Amount cannot exceed {{ selectedProduct()?.maxAmount | currency : 'INR' : 'symbol' : '1.0-0' }}. }
+              </div>
+              }
+            </div>
+
+            <!-- Requested Tenure Field -->
+            <div class="form-group">
+              <label for="requestedTenureMonths">Repayment Tenure (Months)</label>
+              <select id="requestedTenureMonths" formControlName="requestedTenureMonths" class="form-control select-control">
+                <option value="" disabled selected>Select tenure</option>
+                @for (tenure of allowedTenuresList(); track tenure) {
+                <option [value]="tenure">{{ tenure }} Months</option>
+                }
+              </select>
+              @if (loanForm.get('requestedTenureMonths')?.touched && loanForm.get('requestedTenureMonths')?.invalid) {
+              <div class="error-hint">Tenure is required.</div>
+              }
+            </div>
+
+            <!-- Disbursement Account Field -->
+            <div class="form-group">
+              <label for="disbursementAccountId">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="margin-right:6px;vertical-align:middle;display:inline-block">
+                  <rect x="2" y="5" width="20" height="14" rx="2"/>
+                  <path d="M2 10h20M6 14h2M10 14h4" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Disbursement Account
+              </label>
+              @if (userAccounts().length === 0) {
+              <div class="error-hint" style="margin-top:4px;">
+                No active bank accounts found. Please open an account first before applying.
+              </div>
+              } @else {
+              <select id="disbursementAccountId" formControlName="disbursementAccountId" class="form-control select-control">
+                <option value="" disabled selected>Select account to receive loan funds</option>
+                @for (acct of userAccounts(); track acct.id) {
+                <option [value]="acct.id">
+                  {{ acct.accountNumber }} — {{ acct.accountType }} — Balance: {{ acct.balance | currency:'INR':'symbol':'1.2-2' }}
+                </option>
+                }
+              </select>
+              }
+              @if (loanForm.get('disbursementAccountId')?.touched && loanForm.get('disbursementAccountId')?.invalid) {
+              <div class="error-hint">Please select a disbursement account.</div>
+              }
+            </div>
+
+            <div class="action-buttons">
+              <button type="button" class="btn-secondary" (click)="goToStep(1)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" style="margin-right: 6px; display: inline-block; vertical-align: middle;">
+                  <path d="M19 12H5m0 0l7-7m-7 7l7 7" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Back
+              </button>
+              <button type="button" class="btn-primary" (click)="goToStep(3)">
+                Continue
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" style="margin-left: 6px; display: inline-block; vertical-align: middle;">
+                  <path d="M5 12h14m0 0l-7-7m7 7l-7 7" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Real-time Estimation Panel -->
+          <div class="estimate-panel">
+            <h3>Repayment Estimation</h3>
+            <p class="estimate-subtitle">Reducing balance EMI schedule estimate</p>
+
+            <div class="estimate-block">
+              <span class="estimate-label">Monthly Installment (EMI)</span>
+              <span class="estimate-value">{{ estimatedEmi() | currency : 'INR' : 'symbol' : '1.2-2' }}</span>
+            </div>
+
+            <div class="estimate-breakdown">
+              <div class="breakdown-row">
+                <span>Principal Amount</span>
+                <span>{{ requestedAmount() | currency : 'INR' : 'symbol' : '1.2-2' }}</span>
+              </div>
+              <div class="breakdown-row">
+                <span>Annual Rate</span>
+                <span>{{ selectedProduct()?.annualInterestRate }}% p.a.</span>
+              </div>
+              <div class="breakdown-row">
+                <span>Total Tenure</span>
+                <span>{{ requestedTenureMonths() }} Months</span>
+              </div>
+              <div class="breakdown-row total-interest">
+                <span>Total Repayable Estimate</span>
+                <span>{{ (estimatedEmi() * requestedTenureMonths()) | currency : 'INR' : 'symbol' : '1.2-2' }}</span>
+              </div>
+            </div>
+
+            <p class="estimate-disclaimer">
+              * This is an estimate based on the reducing balance amortization formula. Actual values will be fixed upon approval and disbursement.
+            </p>
+          </div>
+        </div>
+      </div>
+      }
+
+      <!-- STEP 3: Review & Submit -->
+      @if (currentStep() === 3) {
+      <div class="step-content review-step animated fadeInUp">
+        <h2 class="section-title">Step 3: Review Application</h2>
+        <p class="section-desc">Please review your loan parameters before submitting the application.</p>
+
+        <div class="review-box glass-panel">
+          <div class="review-grid">
+            <div class="review-item">
+              <span class="review-label">Selected Facility</span>
+              <span class="review-value">{{ selectedProduct()?.productName }}</span>
+            </div>
+            <div class="review-item">
+              <span class="review-label">Requested Principal</span>
+              <span class="review-value highlight-cyan">{{ requestedAmount() | currency : 'INR' : 'symbol' : '1.2-2' }}</span>
+            </div>
+            <div class="review-item">
+              <span class="review-label">Interest Rate</span>
+              <span class="review-value">{{ selectedProduct()?.annualInterestRate }}% p.a.</span>
+            </div>
+            <div class="review-item">
+              <span class="review-label">Tenure Duration</span>
+              <span class="review-value">{{ requestedTenureMonths() }} Months</span>
+            </div>
+            <div class="review-item large-item">
+              <span class="review-label">Estimated Monthly Installment (EMI)</span>
+              <span class="review-value highlight-emerald">{{ estimatedEmi() | currency : 'INR' : 'symbol' : '1.2-2' }} / Month</span>
+            </div>
+            <div class="review-item large-item">
+              <span class="review-label">Disbursement Account</span>
+              @if (selectedAccount()) {
+              <span class="review-value">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="margin-right:5px;vertical-align:middle;display:inline-block;color:var(--success)">
+                  <rect x="2" y="5" width="20" height="14" rx="2"/>
+                  <path d="M2 10h20M6 14h2M10 14h4" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                {{ selectedAccount()!.accountNumber }} ({{ selectedAccount()!.accountType }})
+              </span>
+              } @else {
+              <span class="review-value" style="color:var(--danger)">No account selected</span>
+              }
+            </div>
+          </div>
+
+          <div class="agreement-notice">
+            <input type="checkbox" id="agreeTerms" required checked />
+            <label for="agreeTerms">
+              I authorize NeoBank360 to verify my identity and credit history in accordance with my requested loan facility terms.
+            </label>
+          </div>
+        </div>
+
+        <div class="action-buttons centering">
+          <button type="button" class="btn-secondary" (click)="goToStep(2)" [disabled]="isSubmitting()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" style="margin-right: 6px; display: inline-block; vertical-align: middle;">
+              <path d="M19 12H5m0 0l7-7m-7 7l7 7" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Edit Request
+          </button>
+          <button type="submit" class="btn-primary glow-button" [disabled]="isSubmitting()">
+            @if (isSubmitting()) {
+              <span>Submitting Application...</span>
+            } @else {
+              <span>Submit Loan Application</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" style="margin-left: 6px; display: inline-block; vertical-align: middle;">
+                <path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            }
+          </button>
+        </div>
+      </div>
+      }
+    </form>
+  </div>
+</div>

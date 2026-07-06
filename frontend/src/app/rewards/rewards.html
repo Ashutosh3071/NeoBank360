@@ -1,0 +1,248 @@
+<div class="rewards-page">
+
+  <!-- Ambient background orbs -->
+  <div class="ambient-orb orb-1"></div>
+  <div class="ambient-orb orb-2"></div>
+  <div class="ambient-orb orb-3"></div>
+
+  <div class="rewards-container">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-badge">
+        <span class="header-badge-icon">🏆</span>
+      </div>
+      <h1>Reward Points</h1>
+      <p class="subtitle">Earn, track, and redeem your reward points</p>
+    </div>
+
+    <!-- Alerts -->
+    @if (successMessage()) {
+    <div class="alert alert-success">
+      <span class="alert-icon">✅</span>
+      <span>{{ successMessage() }}</span>
+    </div>
+    }
+    @if (errorMessage()) {
+    <div class="alert alert-error">
+      <span class="alert-icon">⚠️</span>
+      <span>{{ errorMessage() }}</span>
+    </div>
+    }
+
+    <!-- Loading State -->
+    @if (isLoading()) {
+    <div class="loading-state">
+      <div class="loader"></div>
+      <p>Loading rewards...</p>
+    </div>
+    } @else if (reward()) {
+
+    <!-- ═══════ Hero Card ═══════ -->
+    <div class="hero-card">
+      <div class="hero-left">
+        <div
+          class="tier-badge"
+          [style.background]="currentTier().color + '22'"
+          [style.border-color]="currentTier().color"
+        >
+          <span class="tier-icon">{{ currentTier().icon }}</span>
+          <span class="tier-name" [style.color]="currentTier().color">{{
+            currentTier().name
+          }}</span>
+        </div>
+        <div class="points-display">
+          <span class="points-value">{{ reward()!.pointsBalance }}</span>
+          <span class="points-label">Total Points</span>
+        </div>
+        <p class="last-updated">
+          <span class="update-dot"></span>
+          Updated: {{ reward()!.lastUpdated | date : 'medium' }}
+        </p>
+      </div>
+
+      <div class="hero-right">
+        @if (nextTier()) {
+        <div class="progress-section">
+          <div class="progress-header">
+            <span>Progress to {{ nextTier()!.icon }} {{ nextTier()!.name }}</span>
+            <span class="progress-pts">{{ nextTier()!.minPoints - reward()!.pointsBalance }} pts to go</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" [style.width.%]="progressToNext()">
+              <div class="progress-glow"></div>
+            </div>
+          </div>
+        </div>
+        } @else {
+        <div class="max-tier">
+          <span class="max-tier-emoji">🎉</span>
+          <p>You've reached the highest tier!</p>
+        </div>
+        }
+
+        <div class="tier-perks">
+          <h4>Your Perks</h4>
+          <ul>
+            @for (perk of currentTier().perks; track perk) {
+            <li>
+              <span class="perk-check">✓</span>
+              {{ perk }}
+            </li>
+            }
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════ All Tiers ═══════ -->
+    <section class="tiers-section">
+      <div class="section-header">
+        <h2>Tier Levels</h2>
+        <p class="section-desc">Unlock exclusive perks as you advance</p>
+      </div>
+      <div class="tiers-grid">
+        @for (tier of tiers; track tier.name) {
+        <div
+          class="tier-card"
+          [class.active-tier]="currentTier().name === tier.name"
+          [style.border-color]="currentTier().name === tier.name ? tier.color : 'var(--glass-border)'"
+        >
+          <div class="tier-card-glow" [style.background]="tier.color + '15'"></div>
+          <span class="tier-card-icon">{{ tier.icon }}</span>
+          <h3>{{ tier.name }}</h3>
+          <span class="tier-min">{{ tier.minPoints }}+ pts</span>
+          <ul>
+            @for (perk of tier.perks; track perk) {
+            <li>{{ perk }}</li>
+            }
+          </ul>
+        </div>
+        }
+      </div>
+    </section>
+
+    <!-- ═══════ Redeem Section ═══════ -->
+    <section class="redeem-section">
+      <div class="section-header">
+        <h2>Redeem Points</h2>
+        <p class="section-desc">Exchange your points for rewards</p>
+      </div>
+      <div class="redeem-grid">
+        @for (option of redeemOptions; track option.id) {
+        <div class="redeem-card" [class.disabled]="!canRedeem(option.cost)">
+          <span class="redeem-icon">{{ option.icon }}</span>
+          <h3>{{ option.name }}</h3>
+          <p>{{ option.description }}</p>
+          <div class="redeem-footer">
+            <span class="redeem-cost">{{ option.cost }} pts</span>
+            <button
+              class="redeem-btn"
+              [disabled]="!canRedeem(option.cost)"
+              (click)="redeem(option)"
+            >
+              @if (canRedeem(option.cost)) {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" style="margin-right: 6px; display: inline-block; vertical-align: middle;">
+                  <path d="M20 12v10H4V12m16-4H4a2 2 0 00-2 2v2h20v-2a2 2 0 00-2-2zM12 22V8M12 8a3 3 0 10-3-3m3 3a3 3 0 113-3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Redeem</span>
+              } @else {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" style="margin-right: 6px; display: inline-block; vertical-align: middle;">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0110 0v4" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Locked</span>
+              }
+            </button>
+          </div>
+        </div>
+        }
+      </div>
+    </section>
+
+    <!-- ═══════ How to Earn ═══════ -->
+    <section class="earn-section">
+      <div class="section-header">
+        <h2>How to Earn Points</h2>
+        <p class="section-desc">Maximize your rewards with these activities</p>
+      </div>
+      <div class="earn-grid">
+        <div class="earn-card">
+          <span class="earn-emoji">🧾</span>
+          <div>
+            <h4>Pay Bills On Time</h4>
+            <p>+100 points per bill</p>
+          </div>
+          <span class="earn-arrow">→</span>
+        </div>
+        <div class="earn-card">
+          <span class="earn-emoji">💸</span>
+          <div>
+            <h4>Complete Transfers</h4>
+            <p>+50 points per transfer</p>
+          </div>
+          <span class="earn-arrow">→</span>
+        </div>
+        <div class="earn-card">
+          <span class="earn-emoji">📊</span>
+          <div>
+            <h4>Stay Under Budget</h4>
+            <p>+200 points monthly</p>
+          </div>
+          <span class="earn-arrow">→</span>
+        </div>
+        <div class="earn-card">
+          <span class="earn-emoji">🎯</span>
+          <div>
+            <h4>Daily Login Streak</h4>
+            <p>+20 points per day</p>
+          </div>
+          <span class="earn-arrow">→</span>
+        </div>
+      </div>
+    </section>
+
+    } @else {
+    <!-- Empty State -->
+    <div class="empty-state">
+      <span class="empty-icon">🏆</span>
+      <p>No reward data available. Start using the app to earn points!</p>
+      <button class="reload-btn" (click)="loadRewards()">Try Again</button>
+    </div>
+    }
+  </div>
+</div>
+
+<!-- Account Selection Modal for Cashback -->
+@if (showAccountModal()) {
+<div class="modal-backdrop" (click)="closeAccountModal()">
+  <div class="modal-box" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>💵 Credit Cashback</h3>
+      <button type="button" class="modal-close" (click)="closeAccountModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-subtitle">Choose which account to credit the <strong>{{ pendingRedeemOption()?.name }}</strong> to:</p>
+      <div class="modal-form-group">
+        <label for="cashbackAccount">Select Account</label>
+        <select id="cashbackAccount" [value]="selectedAccountId() || ''" (change)="selectedAccountId.set(+$any($event.target).value)">
+          @for (account of userAccounts(); track account.id) {
+            <option [value]="account.id">
+              {{ account.accountNumber }} — {{ account.accountType }} — Balance: {{ account.balance | currency : 'INR' }}
+            </option>
+          }
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-secondary-modal" (click)="closeAccountModal()">Cancel</button>
+      <button type="button" class="btn-debit-confirm" [disabled]="!selectedAccountId()" (click)="confirmCashbackRedeem()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14" style="margin-right: 6px; display: inline-block; vertical-align: middle;">
+          <path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Confirm & Credit
+      </button>
+    </div>
+  </div>
+</div>
+}

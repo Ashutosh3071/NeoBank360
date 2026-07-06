@@ -1,0 +1,772 @@
+<div class="admin-page">
+  <div class="admin-container">
+    <div class="page-header">
+      <div>
+        <h1>Admin Control Panel</h1>
+        <p class="subtitle">Oversee platform accounts, users, combined approvals, and monitor system health metrics</p>
+      </div>
+
+      <div class="header-actions">
+        <button class="refresh-btn" type="button" (click)="loadAll()">⟳ Refresh</button>
+      </div>
+    </div>
+
+    @if (successMessage()) {
+    <div class="alert success">{{ successMessage() }}</div>
+    } @if (errorMessage()) {
+    <div class="alert error">{{ errorMessage() }}</div>
+    }
+
+    <!-- 6 Stats Overview Cards -->
+    @if (stats()) {
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-icon">👥</span>
+        <div>
+          <span class="stat-value">{{ stats()?.totalUsers }}</span>
+          <span class="stat-label">Total Users</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <span class="stat-icon">🟢</span>
+        <div>
+          <span class="stat-value">{{ stats()?.totalActiveUsers }}</span>
+          <span class="stat-label">Active Users</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <span class="stat-icon">📝</span>
+        <div>
+          <span class="stat-value">{{ stats()?.totalLoans }}</span>
+          <span class="stat-label">Total Loans</span>
+        </div>
+      </div>
+
+      <div class="stat-card" [class.attention-needed]="(stats()?.pendingApprovals ?? 0) > 0">
+        <span class="stat-icon">⏳</span>
+        <div>
+          <span class="stat-value">{{ stats()?.pendingApprovals }}</span>
+          <span class="stat-label">Pending Approvals</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <span class="stat-icon">💰</span>
+        <div>
+          <span class="stat-value">{{ stats()?.totalTransactions }}</span>
+          <span class="stat-label">Transactions</span>
+        </div>
+      </div>
+
+      <div class="stat-card highlight">
+        <span class="stat-icon">📈</span>
+        <div>
+          <span class="stat-value">{{ stats()?.platformSavingsRate }}%</span>
+          <span class="stat-label">Savings Rate</span>
+        </div>
+      </div>
+    </div>
+    }
+
+    <!-- Tab Navigation -->
+    <div class="tab-nav">
+      <button type="button" class="tab-btn" [class.active]="activeTab() === 'approvals'"
+        (click)="setActiveTab('approvals')">
+        Pending Approvals @if ((stats()?.pendingApprovals ?? 0) > 0) {
+        <span class="tab-badge warning-badge">{{ stats()?.pendingApprovals }}</span>
+        }
+      </button>
+      <button type="button" class="tab-btn" [class.active]="activeTab() === 'accounts'"
+        (click)="setActiveTab('accounts')">
+        All Accounts
+      </button>
+      <button type="button" class="tab-btn" [class.active]="activeTab() === 'users'" (click)="setActiveTab('users')">
+        Users Management
+      </button>
+      <button type="button" class="tab-btn" [class.active]="activeTab() === 'transactions'"
+        (click)="setActiveTab('transactions')">
+        Recent Transactions
+      </button>
+      <button type="button" class="tab-btn" [class.active]="activeTab() === 'health'" (click)="setActiveTab('health')">
+        System Health
+      </button>
+      <button type="button" class="tab-btn" [class.active]="activeTab() === 'analytics'"
+        (click)="setActiveTab('analytics')">
+        Analytics
+      </button>
+      <button type="button" class="tab-btn" [class.active]="activeTab() === 'logs'" (click)="setActiveTab('logs')">
+        System Logs
+      </button>
+    </div>
+
+    <!-- TAB: Pending Approvals -->
+    @if (activeTab() === 'approvals') {
+    <section class="tab-content animate-fade-in">
+      <div class="filter-bar">
+        <span class="filter-label">Filter:</span>
+        <button type="button" class="filter-btn" [class.active]="approvalModuleFilter() === ''"
+          (click)="setApprovalFilter('')">All</button>
+        <button type="button" class="filter-btn" [class.active]="approvalModuleFilter() === 'LOAN'"
+          (click)="setApprovalFilter('LOAN')">Loans</button>
+        <button type="button" class="filter-btn" [class.active]="approvalModuleFilter() === 'ACCOUNT'"
+          (click)="setApprovalFilter('ACCOUNT')">Bank Accounts</button>
+      </div>
+
+      @if (combinedApprovals().length === 0) {
+      <div class="empty-state">
+        <span class="empty-icon">✅</span>
+        <h3>All caught up!</h3>
+        <p>No pending approvals match your current filter.</p>
+      </div>
+      } @else {
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Applicant</th>
+              <th>Product / Details</th>
+              <th>Amount / Balance</th>
+              <th>Applied Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (approval of combinedApprovals(); track approval.id) {
+            <tr>
+              <td>
+                <span class="type-pill" [class.type-loan]="approval.type === 'LOAN_APPLICATION'"
+                  [class.type-account]="approval.type === 'ACCOUNT_APPROVAL'">
+                  {{ approval.type === 'LOAN_APPLICATION' ? 'LOAN' : 'ACCOUNT' }}
+                </span>
+              </td>
+              <td><strong>{{ approval.applicantName }}</strong></td>
+              <td>{{ approval.productName }}</td>
+              <td class="amount">{{ approval.requestedAmount | currency : 'INR' : 'symbol' : '1.2-2' }}</td>
+              <td>{{ approval.appliedAt | date : 'medium' }}</td>
+              <td>
+                <div class="action-btn-group">
+                  <button class="action-btn approve-btn" type="button" (click)="reviewApproval(approval)">
+                    {{ approval.type === 'ACCOUNT_APPROVAL' ? '🔍 Review KYC' : 'Review' }}
+                  </button>
+                  @if (approval.type === 'ACCOUNT_APPROVAL') {
+                  <button class="action-btn reject-btn" type="button" (click)="rejectApproval(approval)">Reject</button>
+                  }
+                </div>
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      }
+    </section>
+    }
+
+    <!-- TAB: All Accounts -->
+    @if (activeTab() === 'accounts') {
+    <section class="tab-content animate-fade-in">
+      <div class="split-view">
+        <div class="split-table">
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Account #</th>
+                  <th>Type</th>
+                  <th>Balance</th>
+                  <th>Status</th>
+                  <th>Active</th>
+                  <th>Owner</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (account of accounts(); track account.id) {
+                <tr>
+                  <td class="mono">{{ account.accountNumber }}</td>
+                  <td>{{ account.accountType }}</td>
+                  <td class="amount">{{ account.balance | currency : 'INR' : 'symbol' : '1.2-2' }}</td>
+                  <td>
+                    <span class="status-pill" [class.status-approved]="account.accountStatus === 'APPROVED'"
+                      [class.status-pending]="account.accountStatus === 'PENDING_APPROVAL'"
+                      [class.status-rejected]="account.accountStatus === 'REJECTED'">
+                      {{ account.accountStatus }}
+                    </span>
+                  </td>
+                  <td>{{ account.isActive ? '✓' : '✕' }}</td>
+                  <td>{{ account.userEmail }}</td>
+                  <td>{{ account.createdAt | date : 'shortDate' }}</td>
+                  <td>
+                    @if (account.accountStatus === 'APPROVED' && account.isActive) {
+                    <button type="button" class="action-btn approve-btn" (click)="openAdminCreditModal(account)">
+                      ＋ Credit
+                    </button>
+                    } @else {
+                    <span style="color: var(--text-muted); font-size: 0.75rem;">—</span>
+                    }
+                  </td>
+                </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="split-chart">
+          <div class="chart-card">
+            <h3>Accounts by Status</h3>
+            <div class="chart-container">
+              <canvas #accountChart></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    }
+
+    <!-- TAB: Users Management -->
+    @if (activeTab() === 'users') {
+    <section class="tab-content animate-fade-in">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Full Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (user of users(); track user.id) {
+            <tr>
+              <td>{{ user.id }}</td>
+              <td><strong>{{ user.fullName }}</strong></td>
+              <td>{{ user.email }}</td>
+              <td>
+                <span class="role-badge" [class.role-admin]="user.role === 'ADMIN'"
+                  [class.role-customer]="user.role === 'CUSTOMER'">
+                  {{ user.role }}
+                </span>
+              </td>
+              <td>
+                <span class="status-chip" [class.active]="user.isActive" [class.inactive]="!user.isActive">
+                  {{ user.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+              <td>{{ user.createdAt | date : 'shortDate' }}</td>
+              <td>
+                <div class="action-btn-group">
+                  <button type="button" class="action-btn" [class.deactivate-btn]="user.isActive"
+                    [class.activate-btn]="!user.isActive"
+                    [disabled]="user.email === getCurrentUserEmail() && user.isActive"
+                    [attr.title]="user.email === getCurrentUserEmail() && user.isActive ? 'You cannot deactivate your own admin account' : null"
+                    (click)="openToggleStatusConfirm(user)">
+                    {{ user.isActive ? 'Deactivate' : 'Activate' }}
+                  </button>
+                  <button type="button" class="action-btn activity-btn" (click)="openUserActivity(user)">
+                    View Activity
+                  </button>
+                </div>
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Controls -->
+      <div class="pagination-container">
+        <button type="button" class="page-btn" [disabled]="usersPage() === 0" (click)="prevUsersPage()">◀ Prev</button>
+        <span class="page-info">Page {{ usersPage() + 1 }} of {{ totalUsersPages() }}</span>
+        <button type="button" class="page-btn" [disabled]="usersPage() >= totalUsersPages() - 1"
+          (click)="nextUsersPage()">Next ▶</button>
+      </div>
+    </section>
+    }
+
+    <!-- TAB: Recent Transactions -->
+    @if (activeTab() === 'transactions') {
+    <section class="tab-content animate-fade-in">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Account</th>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Balance After</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (tx of recentTransactions(); track tx.id) {
+            <tr>
+              <td>{{ tx.transactionDate | date : 'medium' }}</td>
+              <td class="mono">{{ tx.accountNumber }}</td>
+              <td>
+                <span class="tx-type" [class.credit]="tx.transactionType === 'CREDIT'"
+                  [class.debit]="tx.transactionType === 'DEBIT'">
+                  {{ tx.transactionType }}
+                </span>
+              </td>
+              <td class="amount">{{ tx.amount | currency : 'INR' : 'symbol' : '1.2-2' }}</td>
+              <td>{{ tx.balanceAfter | currency : 'INR' : 'symbol' : '1.2-2' }}</td>
+              <td>{{ tx.description || '—' }}</td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+    }
+
+    <!-- TAB: System Health -->
+    @if (activeTab() === 'health') {
+    <section class="tab-content animate-fade-in">
+      @if (health()) {
+      <div class="health-grid">
+        <div class="health-card">
+          <span class="health-card-icon">🖧</span>
+          <h4>Database Status</h4>
+          <span class="health-status-badge" [class.up]="health()?.dbStatus === 'UP'"
+            [class.down]="health()?.dbStatus === 'DOWN'">
+            {{ health()?.dbStatus }}
+          </span>
+          <p class="health-desc">Uptime checks are verified by running a periodic ping test.</p>
+        </div>
+
+        <div class="health-card">
+          <span class="health-card-icon">👥</span>
+          <h4>Active Users (Last 15m)</h4>
+          <span class="health-metric">{{ health()?.activeSessions }}</span>
+          <p class="health-desc">Stateless count of distinct users active in the last 15 minutes.</p>
+        </div>
+
+        <div class="health-card">
+          <span class="health-card-icon">⏱</span>
+          <h4>Server Uptime</h4>
+          <span class="health-metric-small">{{ formatUptime(health()?.serverUptimeSeconds) }}</span>
+          <p class="health-desc">Elapsed uptime of the application server container process.</p>
+        </div>
+      </div>
+      }
+    </section>
+    }
+
+    <!-- TAB: Analytics -->
+    @if (activeTab() === 'analytics') {
+    <section class="tab-content animate-fade-in">
+      <div class="analytics-grid">
+        <!-- Card 1: Transactions -->
+        <div class="chart-card large">
+          <div class="chart-header flex justify-between items-center">
+            <div>
+              <h3>Platform Transaction Volumes</h3>
+              <p class="chart-subtitle">Real-time daily transaction velocity aggregation</p>
+            </div>
+            <div class="timeframe-selector">
+              <button type="button" [class.active]="transactionTimeframe() === '7d'"
+                (click)="setTransactionTimeframe('7d')">7D</button>
+              <button type="button" [class.active]="transactionTimeframe() === '30d'"
+                (click)="setTransactionTimeframe('30d')">30D</button>
+              <button type="button" [class.active]="transactionTimeframe() === 'YTD'"
+                (click)="setTransactionTimeframe('YTD')">YTD</button>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas #transactionChart></canvas>
+          </div>
+        </div>
+
+        <!-- Card 2: Loans -->
+        <div class="chart-card large">
+          <div class="chart-header flex justify-between items-center">
+            <div>
+              <h3>Loan Distribution & NPA Ratio</h3>
+              <p class="chart-subtitle">Loans grouped by approval status and product type</p>
+            </div>
+            <div class="timeframe-selector">
+              <button type="button" [class.active]="loanTimeframe() === '7d'"
+                (click)="setLoanTimeframe('7d')">7D</button>
+              <button type="button" [class.active]="loanTimeframe() === '30d'"
+                (click)="setLoanTimeframe('30d')">30D</button>
+              <button type="button" [class.active]="loanTimeframe() === 'YTD'"
+                (click)="setLoanTimeframe('YTD')">YTD</button>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas #loanChart></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+    }
+
+    <!-- TAB: System Logs -->
+    @if (activeTab() === 'logs') {
+    <section class="tab-content animate-fade-in">
+      <!-- Logs Health Charts (Mini charts row) -->
+      <div class="logs-health-row">
+        <div class="logs-health-chart-card">
+          <h4>API Status Code Distribution</h4>
+          <div class="mini-chart-container">
+            <canvas #logsErrorChart></canvas>
+          </div>
+        </div>
+        <div class="logs-health-chart-card">
+          <h4>Request Latency Trend</h4>
+          <div class="mini-chart-container">
+            <canvas #logsLatencyChart></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="filter-bar flex wrap gap-4 items-center">
+        <div class="filter-group">
+          <label for="logFrom">From:</label>
+          <input type="date" id="logFrom" [value]="logsFrom()" (input)="logsFrom.set($any($event.target).value)">
+        </div>
+        <div class="filter-group">
+          <label for="logTo">To:</label>
+          <input type="date" id="logTo" [value]="logsTo()" (input)="logsTo.set($any($event.target).value)">
+        </div>
+        <div class="filter-group">
+          <label for="logStatus">HTTP Status:</label>
+          <input type="number" id="logStatus" placeholder="e.g. 200, 403" [value]="logsStatus()"
+            (input)="logsStatus.set($any($event.target).value ? +$any($event.target).value : null)">
+        </div>
+        <div class="filter-actions flex gap-2">
+          <button class="action-btn approve-btn" type="button" (click)="filterLogs()">Filter</button>
+          <button class="action-btn reject-btn" type="button" (click)="clearLogsFilter()">Reset</button>
+        </div>
+      </div>
+
+      <!-- Logs Table -->
+      @if (logs().length === 0) {
+      <div class="empty-state">
+        <span class="empty-icon">📝</span>
+        <h3>No system logs found</h3>
+        <p>Adjust your search filters and try again.</p>
+      </div>
+      } @else {
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Method</th>
+              <th>Endpoint</th>
+              <th>Status</th>
+              <th>Latency</th>
+              <th>Acting User ID</th>
+              <th>Error Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (log of logs(); track log.id) {
+            <tr>
+              <td>{{ log.eventTimestamp | date : 'medium' }}</td>
+              <td class="mono"><strong>{{ log.httpMethod }}</strong></td>
+              <td class="mono">{{ log.endpoint }}</td>
+              <td>
+                <span class="status-chip" [class.active]="log.responseStatus >= 200 && log.responseStatus < 300"
+                  [class.inactive]="log.responseStatus >= 400">
+                  {{ log.responseStatus }}
+                </span>
+              </td>
+              <td>{{ log.executionTimeMs }} ms</td>
+              <td>{{ log.actingUserId || 'Anonymous' }}</td>
+              <td class="error-msg-col" [attr.title]="log.errorMessage">{{ log.errorMessage || '—' }}</td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination-container">
+        <button type="button" class="page-btn" [disabled]="logsPage() === 0" (click)="prevLogsPage()">◀ Prev</button>
+        <span class="page-info">Page {{ logsPage() + 1 }} of {{ totalLogsPages() }} (Total: {{ totalLogsCount()
+          }})</span>
+        <button type="button" class="page-btn" [disabled]="logsPage() >= totalLogsPages() - 1"
+          (click)="nextLogsPage()">Next ▶</button>
+      </div>
+      }
+    </section>
+    }
+  </div>
+</div>
+
+<!-- Premium User Status Toggle Confirmation Modal -->
+@if (showConfirmModal()) {
+<div class="modal-backdrop" (click)="closeConfirmModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Confirm Account Status Change</h3>
+      <button class="modal-close" type="button" (click)="closeConfirmModal()">✕</button>
+    </div>
+    <div class="modal-body text-center">
+      <p>Are you sure you want to <strong>{{ userToToggle()?.isActive ? 'Deactivate' : 'Activate' }}</strong> user
+        account:</p>
+      <div class="user-confirm-details">
+        <h4>{{ userToToggle()?.fullName }}</h4>
+        <p>{{ userToToggle()?.email }}</p>
+      </div>
+      <p class="modal-warning">
+        @if (userToToggle()?.isActive) {
+        Deactivating this user will lock them out of the platform immediately.
+        } @else {
+        Activating this user will allow them to login and access core banking modules immediately.
+        }
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" type="button" (click)="closeConfirmModal()">Cancel</button>
+      <button class="btn" [class.btn-danger]="userToToggle()?.isActive" [class.btn-success]="!userToToggle()?.isActive"
+        type="button" (click)="confirmToggleStatus()">
+        Confirm {{ userToToggle()?.isActive ? 'Deactivation' : 'Activation' }}
+      </button>
+    </div>
+  </div>
+</div>
+}
+
+<!-- Detailed User Activity Modal -->
+@if (showActivityModal()) {
+<div class="modal-backdrop" (click)="closeActivityModal()">
+  <div class="modal-content large-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>User Activity Log & Auditing</h3>
+      <button class="modal-close" type="button" (click)="closeActivityModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="selected-user-header">
+        <div>
+          <h4>{{ selectedUser()?.fullName }}</h4>
+          <p>{{ selectedUser()?.email }} (ID: {{ selectedUser()?.id }})</p>
+        </div>
+        <span class="role-badge role-customer">CUSTOMER</span>
+      </div>
+
+      @if (isLoadingActivity()) {
+      <div class="modal-loading shimmer">Loading user activity log...</div>
+      } @else {
+      <div class="activity-sections">
+        <!-- Left Panel: Logins -->
+        <div class="activity-panel logins-panel">
+          <h5>Recent Successful Logins (Last 5)</h5>
+          @if (!selectedUserActivity()?.loginEvents || selectedUserActivity()?.loginEvents?.length === 0) {
+          <p class="no-activity">No logins recorded this session.</p>
+          } @else {
+          <ul class="login-events-list">
+            @for (login of selectedUserActivity()?.loginEvents; track login) {
+            <li>
+              <span class="login-bullet">✔</span>
+              <span class="login-time">{{ login | date : 'medium' }}</span>
+            </li>
+            }
+          </ul>
+          }
+        </div>
+
+        <!-- Right Panel: Transactions -->
+        <div class="activity-panel txs-panel">
+          <h5>Recent Transactions (Last 20)</h5>
+          @if (!selectedUserActivity()?.recentTransactions || selectedUserActivity()?.recentTransactions?.length === 0)
+          {
+          <p class="no-activity">No transactions found for this user.</p>
+          } @else {
+          <div class="compact-table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (tx of selectedUserActivity()?.recentTransactions; track tx.id) {
+                <tr>
+                  <td>{{ tx.transactionDate | date : 'short' }}</td>
+                  <td>
+                    <span class="compact-tx-pill" [class.credit]="tx.transactionType === 'CREDIT'"
+                      [class.debit]="tx.transactionType === 'DEBIT'">
+                      {{ tx.transactionType }}
+                    </span>
+                  </td>
+                  <td class="amount">{{ tx.amount | currency : 'INR' : 'symbol' : '1.2-2' }}</td>
+                  <td>{{ tx.description || '—' }}</td>
+                </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          }
+        </div>
+      </div>
+      }
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" type="button" (click)="closeActivityModal()">Close Logs</button>
+    </div>
+  </div>
+</div>
+}
+<!-- KYC Review Modal for Account Approval -->
+@if (showKycModal()) {
+<div class="modal-backdrop" (click)="closeKycModal()">
+  <div class="modal-content large-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>🔍 KYC Review — Account Application</h3>
+      <button class="modal-close" type="button" (click)="closeKycModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      @if (isLoadingKyc()) {
+      <div class="modal-loading shimmer">Loading applicant details...</div>
+      } @else if (kycReviewAccount()) {
+      <!-- Applicant Identity Section -->
+      <div class="kyc-section">
+        <h4 class="kyc-section-title">👤 Applicant Identity</h4>
+        <div class="kyc-grid">
+          <div class="kyc-field">
+            <span class="kyc-label">Full Name</span>
+            <span class="kyc-value">{{ kycReviewAccount()['userFullName'] || '—' }}</span>
+          </div>
+          <div class="kyc-field">
+            <span class="kyc-label">Email Address</span>
+            <span class="kyc-value mono">{{ kycReviewAccount()['userEmail'] || '—' }}</span>
+          </div>
+          <div class="kyc-field">
+            <span class="kyc-label">Aadhaar Number</span>
+            <span class="kyc-value kyc-sensitive">{{ kycReviewAccount()['aadhaarNumber'] || '—' }}</span>
+          </div>
+          <div class="kyc-field">
+            <span class="kyc-label">PAN Number</span>
+            <span class="kyc-value kyc-sensitive">{{ kycReviewAccount()['panNumber'] || '—' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Account Details Section -->
+      <div class="kyc-section">
+        <h4 class="kyc-section-title">🏦 Account Details</h4>
+        <div class="kyc-grid">
+          <div class="kyc-field">
+            <span class="kyc-label">Account Number</span>
+            <span class="kyc-value mono">{{ kycReviewAccount()['accountNumber'] }}</span>
+          </div>
+          <div class="kyc-field">
+            <span class="kyc-label">Account Type</span>
+            <span class="kyc-value">
+              <span class="type-pill type-account">{{ kycReviewAccount()['accountType'] }}</span>
+            </span>
+          </div>
+          <div class="kyc-field">
+            <span class="kyc-label">Current Status</span>
+            <span class="kyc-value">
+              <span class="status-pill status-pending">{{ kycReviewAccount()['accountStatus'] }}</span>
+            </span>
+          </div>
+          <div class="kyc-field">
+            <span class="kyc-label">Applied On</span>
+            <span class="kyc-value">{{ kycReviewAccount()['createdAt'] | date: 'medium' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="modal-warning" style="border-color: #f59e0b; color: #f59e0b; background: rgba(245,158,11,0.05);">
+        ⚠️ Please verify the Aadhaar and PAN details above before approving this account application.
+      </p>
+      }
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" type="button" (click)="closeKycModal()">Cancel</button>
+      <button class="btn btn-danger" type="button" [disabled]="isLoadingKyc()" (click)="confirmRejectFromKyc()">
+        ✕ Reject Application
+      </button>
+      <button class="btn btn-success" type="button" [disabled]="isLoadingKyc()" (click)="confirmApproveFromKyc()">
+        ✓ Approve Account
+      </button>
+    </div>
+  </div>
+</div>
+}
+
+<!-- ✅ Admin Credit Modal -->
+@if (showAdminCreditModal() && adminCreditAccount()) {
+<div class="modal-backdrop" (click)="closeAdminCreditModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>＋ Credit User Account</h3>
+      <button class="modal-close" type="button" (click)="closeAdminCreditModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="kyc-section">
+        <h4 class="kyc-section-title">🏦 Account Details</h4>
+        <div class="kyc-grid">
+          <div class="kyc-field">
+            <span class="kyc-label">Account Number</span>
+            <span class="kyc-value mono">{{ adminCreditAccount()['accountNumber'] }}</span>
+          </div>
+          <div class="kyc-field">
+            <span class="kyc-label">Account Type</span>
+            <span class="kyc-value">{{ adminCreditAccount()['accountType'] }}</span>
+          </div>
+          <div class="kyc-field">
+            <span class="kyc-label">Owner</span>
+            <span class="kyc-value">{{ adminCreditAccount()['userEmail'] }}</span>
+          </div>
+          <div class="kyc-field">
+            <span class="kyc-label">Current Balance</span>
+            <span class="kyc-value" style="color: #10b981; font-weight: 700;">
+              {{ adminCreditAccount()['balance'] | currency : 'INR' : 'symbol' : '1.2-2' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="filter-group" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+        <label
+          style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">
+          Credit Amount (₹)
+        </label>
+        <input type="number" min="0.01" step="0.01" placeholder="Enter amount to credit" [value]="adminCreditAmount()"
+          (input)="adminCreditAmount.set(+$any($event.target).value)" style="width: 100%;" />
+      </div>
+
+      <div class="filter-group" style="flex-direction: column; align-items: flex-start; gap: 8px; margin-top: 12px;">
+        <label
+          style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">
+          Description (optional)
+        </label>
+        <input type="text" placeholder="e.g. Bonus, Refund, Salary credit" [value]="adminCreditDescription()"
+          (input)="adminCreditDescription.set($any($event.target).value)" style="width: 100%;" />
+      </div>
+
+      @if (errorMessage()) {
+      <div class="alert error" style="margin-top: 12px;">{{ errorMessage() }}</div>
+      }
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" type="button" (click)="closeAdminCreditModal()">Cancel</button>
+      <button class="btn btn-success" type="button" [disabled]="isAdminCrediting() || adminCreditAmount() <= 0"
+        (click)="confirmAdminCredit()">
+        {{ isAdminCrediting() ? 'Processing...' : '✓ Confirm Credit' }}
+      </button>
+    </div>
+  </div>
+</div>
+}

@@ -1,0 +1,228 @@
+<div class="insights-page">
+  <!-- Ambient background orbs -->
+  <div class="ambient-orb orb-1"></div>
+  <div class="ambient-orb orb-2"></div>
+
+  <div class="insights-container">
+    <div class="page-header">
+      <div>
+        <h1>Financial Insights</h1>
+        <p class="subtitle">Analyse your personal income, expenses, and savings trends over the last 6 months</p>
+      </div>
+
+      <div class="header-actions">
+        <button class="refresh-btn" type="button" [disabled]="isLoading()" (click)="loadAll()">
+          @if (isLoading()) {
+            <span>Loading...</span>
+          } @else {
+            <span>⟳ Refresh</span>
+          }
+        </button>
+      </div>
+    </div>
+
+    @if (errorMessage()) {
+      <div class="alert error">{{ errorMessage() }}</div>
+    }
+
+    <!-- Loading Skeleton Shimmer -->
+    @if (isLoading() && !insights()) {
+      <div class="skeleton-grid">
+        <div class="skeleton-card shimmer"></div>
+        <div class="skeleton-card shimmer"></div>
+        <div class="skeleton-card shimmer"></div>
+      </div>
+      <div class="skeleton-chart shimmer"></div>
+    } @else {
+      <!-- Tab Navigation -->
+      <div class="tab-nav">
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeSubTab() === 'overview'"
+          (click)="setActiveSubTab('overview')"
+        >
+          Overview & Trends
+        </button>
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeSubTab() === 'spending'"
+          (click)="setActiveSubTab('spending')"
+        >
+          Spending & Budgets
+        </button>
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeSubTab() === 'wealth'"
+          (click)="setActiveSubTab('wealth')"
+        >
+          Wealth & Liabilities
+        </button>
+      </div>
+
+      <!-- TAB 1: Overview & Trends -->
+      @if (activeSubTab() === 'overview') {
+        <div class="tab-content animate-fade-in">
+          <!-- KPI Cards Grid -->
+          <div class="stats-grid">
+            <!-- Card 1: Total Income -->
+            <div class="stat-card income-card">
+              <span class="stat-icon">📈</span>
+              <div>
+                <span class="stat-value">{{ insights()?.totalIncome | currency : 'INR' : 'symbol' : '1.2-2' }}</span>
+                <span class="stat-label">Total Income</span>
+              </div>
+            </div>
+
+            <!-- Card 2: Total Expense -->
+            <div class="stat-card expense-card">
+              <span class="stat-icon">📉</span>
+              <div>
+                <span class="stat-value">{{ insights()?.totalExpense | currency : 'INR' : 'symbol' : '1.2-2' }}</span>
+                <span class="stat-label">Total Expense</span>
+              </div>
+            </div>
+
+            <!-- Card 3: Savings -->
+            <div class="stat-card savings-card" [class.negative-savings]="(insights()?.savings ?? 0) < 0">
+              <span class="stat-icon">💰</span>
+              <div>
+                <span class="stat-value">
+                  {{ insights()?.savings | currency : 'INR' : 'symbol' : '1.2-2' }}
+                </span>
+                <span class="stat-label">
+                  Savings @if ((insights()?.savings ?? 0) < 0) {
+                    <span class="neg-tag">(Deficit)</span>
+                  } @else {
+                    <span class="pos-tag">(Surplus)</span>
+                  }
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Grid Row -->
+          <div class="charts-row">
+            <div class="chart-card">
+              <div class="chart-header">
+                <h3>Monthly Income vs Expense</h3>
+                <p class="chart-subtitle">Compare your monthly credits and debits chronologically</p>
+              </div>
+              <div class="chart-container">
+                <canvas #trendChart></canvas>
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-header">
+                <h3>Reward Points Accrual</h3>
+                <p class="chart-subtitle">MoM cumulative credit reward points trajectory</p>
+              </div>
+              <div class="chart-container">
+                <canvas #rewardsChart></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- TAB 2: Spending & Budgets -->
+      @if (activeSubTab() === 'spending') {
+        <div class="tab-content animate-fade-in">
+          <div class="charts-row">
+            <div class="chart-card">
+              <div class="chart-header">
+                <h3>Category Spending Distribution</h3>
+                <p class="chart-subtitle">Breakdown of current month's transaction debit categories</p>
+              </div>
+              <div class="chart-container">
+                <canvas #spendingDoughnutChart></canvas>
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-header">
+                <h3>Budget Limit vs Actual Spend</h3>
+                <p class="chart-subtitle">Comparison of category spending limits and real utilization</p>
+              </div>
+              <div class="chart-container">
+                @if (budgets().length === 0) {
+                  <div class="empty-budgets-state">
+                    <span class="empty-icon">📂</span>
+                    <p>No active budgets configured for this month.</p>
+                  </div>
+                } @else {
+                  <canvas #budgetBarChart></canvas>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- TAB 3: Wealth & Liabilities -->
+      @if (activeSubTab() === 'wealth') {
+        <div class="tab-content animate-fade-in">
+          <div class="wealth-layout">
+            <div class="chart-card full-width-chart">
+              <div class="chart-header">
+                <h3>Net Worth Progression Timeline</h3>
+                <p class="chart-subtitle">Calculated net value: liquid assets minus outstanding loan principal liabilities</p>
+              </div>
+              <div class="chart-container">
+                <canvas #netWorthChart></canvas>
+              </div>
+            </div>
+
+            <!-- Loan Payoff Forecast list -->
+            <div class="payoff-section">
+              <h3>Liability Payoff Forecasts</h3>
+              <p class="section-subtitle">Estimated timeline to clear active credit lines based on outstanding principal and EMI schedules</p>
+
+              @if (!wealthData() || !wealthData()?.loanPayoffForecasts || wealthData()?.loanPayoffForecasts?.length === 0) {
+                <div class="debt-free-card">
+                  <span class="debt-free-icon">🎉</span>
+                  <div>
+                    <h4>You are debt-free!</h4>
+                    <p>No outstanding loan liabilities or active credit contracts found.</p>
+                  </div>
+                </div>
+              } @else {
+                <div class="payoff-grid">
+                  @for (forecast of wealthData()?.loanPayoffForecasts; track forecast.loanAccountId) {
+                    <div class="payoff-card">
+                      <div class="payoff-card-header">
+                        <h4>{{ forecast.productName }}</h4>
+                        <span class="payoff-id">ID: {{ forecast.loanAccountId }}</span>
+                      </div>
+                      <div class="payoff-details">
+                        <div class="payoff-row">
+                          <span class="payoff-label">Outstanding Principal:</span>
+                          <span class="payoff-value amount">{{ forecast.outstandingPrincipal | currency : 'INR' : 'symbol' : '1.2-2' }}</span>
+                        </div>
+                        <div class="payoff-row">
+                          <span class="payoff-label">Monthly EMI:</span>
+                          <span class="payoff-value amount">{{ forecast.emiAmount | currency : 'INR' : 'symbol' : '1.2-2' }}</span>
+                        </div>
+                        <div class="payoff-row">
+                          <span class="payoff-label">Months Remaining:</span>
+                          <span class="payoff-value highlighted-number">{{ forecast.monthsRemaining }} Months</span>
+                        </div>
+                        <div class="payoff-row">
+                          <span class="payoff-label">Estimated Payoff Date:</span>
+                          <span class="payoff-value date-value">{{ forecast.payoffDate | date : 'mediumDate' }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    }
+  </div>
+</div>

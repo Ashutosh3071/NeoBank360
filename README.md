@@ -4,8 +4,7 @@
 **Your Money, Reimagined.**
 
 NeoBank360 is a full-stack digital banking platform that lets users open accounts instantly, transfer funds seamlessly, track budgets in real time, manage loans and bills, and earn rewards — all from one powerful dashboard.
-
-![NeoBank360 Homepage](./screenshots/homepage.png)
+<img width="1918" height="912" alt="Screenshot 2026-07-06 085821" src="https://github.com/user-attachments/assets/e68749d3-b1d3-446c-ba29-b7d8a031f535" />
 
 ---
 
